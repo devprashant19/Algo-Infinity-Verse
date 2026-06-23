@@ -34,7 +34,15 @@ htmlFiles.forEach(file => {
     while ((match = hrefRegex.exec(content)) !== null) {
         const link = match[1];
         totalLinks++;
-        if (link.startsWith('http') || link.startsWith('#') || link.startsWith('mailto:') || link.startsWith('tel:')) continue;
+        if (
+            link.startsWith('http') ||
+            link.startsWith('//') ||
+            link.startsWith('#') ||
+            link.startsWith('mailto:') ||
+            link.startsWith('tel:') ||
+            link.startsWith('javascript:') ||
+            link.startsWith('data:')
+        ) continue;
         
         // Strip query params and hashes for file checking
         const cleanLink = link.split('?')[0].split('#')[0];
