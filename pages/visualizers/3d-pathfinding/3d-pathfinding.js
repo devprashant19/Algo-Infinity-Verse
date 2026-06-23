@@ -142,6 +142,8 @@ function setupScene() {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(els.container.clientWidth, els.container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for perf
+    renderer.domElement.setAttribute('role', 'img');
+    renderer.domElement.setAttribute('aria-label', '3D Pathfinding Visualization');
     els.container.appendChild(renderer.domElement);
     
     controls = new THREE.OrbitControls(camera, renderer.domElement);

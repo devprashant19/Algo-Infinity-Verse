@@ -68,7 +68,7 @@
 
                 <div class="settings-group">
                     <label>Algorithm Speed</label>
-                    <input type="range" id="speedSlider" min="1" max="50" value="20">
+                    <input type="range" id="speedSlider" min="1" max="50" value="20" aria-label="Algorithm Speed">
                 </div>
 
                 <div class="legend-box">
@@ -87,19 +87,20 @@
                     </div>
                     <div class="stat-row">
                         <span>Nodes Explored:</span>
-                        <strong class="text-accent" id="statExplored">0</strong>
+                        <strong class="text-accent" id="statExplored" aria-live="polite">0</strong>
                     </div>
                     <div class="stat-row">
                         <span>Path Cost:</span>
-                        <strong class="text-accent" id="statCost">0.00</strong>
+                        <strong class="text-accent" id="statCost" aria-live="polite">0.00</strong>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- 3D Canvas Container -->
-        <div class="canvas-wrapper" id="threejs-container">
-            <div class="camera-hint"><i class="fas fa-mouse"></i> Click & Drag to Rotate | Scroll to Zoom</div>
+        <div class="canvas-wrapper" id="threejs-container" aria-label="3D Pathfinding Terrain Canvas" role="region">
+            <p class="sr-only">A 3D representation of terrain where the A* algorithm visually searches for the optimal path.</p>
+            <div class="camera-hint" aria-hidden="true"><i class="fas fa-mouse"></i> Click & Drag to Rotate | Scroll to Zoom</div>
         </div>
 
     </main>

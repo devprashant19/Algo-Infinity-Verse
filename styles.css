@@ -61,6 +61,15 @@ body {
   border: 0 !important;
 }
 
+/* ===== ACCESSIBILITY FOCUS STATES ===== */
+:focus-visible,
+.focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.3) !important;
+  border-radius: 4px;
+}
+
 /* ===== LOADING SCREEN ===== */
 #loading-screen {
   position: fixed;
