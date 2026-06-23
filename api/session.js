@@ -111,7 +111,7 @@ async function readUsers() {
   if (!useFirestore) return [];
   try {
     const snap = await db.collection("users").get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
   } catch (e) { console.error(e); return []; }
 }
 

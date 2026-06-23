@@ -3,6 +3,7 @@
   const privateHashes = new Set(["#dashboard", "#profile"]);
   let currentSession = null;
   let authReady = false;
+  let firebaseReady = false;
 
   function isAuthPage() {
     return (
@@ -11,6 +12,10 @@
       location.pathname === "/signup" ||
       location.pathname.endsWith("/signup.html")
     );
+  }
+
+  function isFirebaseConfigured() {
+    return typeof window.__firebaseClient !== "undefined" && window.__firebaseClient.isConfigured();
   }
 
   function authUrl(path) {
@@ -74,6 +79,8 @@
       document
         .querySelectorAll("[data-auth-user-email]")
         .forEach((el) => (el.textContent = ""));
+
+      document.querySelectorAll("[data-auth-avatar]").forEach((el) => { el.style.display = "none"; });
       return;
     }
 
@@ -99,6 +106,15 @@
     document
       .querySelectorAll("[data-auth-user-email]")
       .forEach((el) => (el.textContent = user.email));
+
+    document.querySelectorAll("[data-auth-avatar]").forEach((el) => {
+      if (user && user.avatar) {
+        el.src = user.avatar;
+        el.style.display = "inline-block";
+      } else {
+        el.style.display = "none";
+      }
+    });
 
     const supportName = document.querySelector(
       ".support-form input[placeholder='Name']",
@@ -128,7 +144,20 @@
           const chip = document.createElement("span");
           chip.className = "nav-user-chip";
           chip.title = currentSession.user.email;
-          chip.innerHTML = `<i class="fas fa-user-circle"></i><span></span>`;
+          const nameEl = document.createElement("span");
+          nameEl.textContent = currentSession.user.name;
+          if (currentSession.user.avatar) {
+            const avatarEl = document.createElement("img");
+            avatarEl.className = "nav-avatar";
+            avatarEl.alt = "";
+            avatarEl.setAttribute("data-auth-avatar", "");
+            avatarEl.src = currentSession.user.avatar;
+            chip.append(avatarEl, nameEl);
+          } else {
+            const iconEl = document.createElement("i");
+            iconEl.className = "fas fa-user-circle";
+            chip.append(iconEl, nameEl);
+          }
           chip.querySelector("span").textContent = currentSession.user.name;
 
           const btn = document.createElement("button");
@@ -181,6 +210,10 @@
           });
 
           if (!response.ok) throw new Error("Logout failed.");
+
+          if (window.__firebaseClient) {
+            try { await window.__firebaseClient.signOutUser(); } catch (e) { /* ignore */ }
+          }
         } catch (error) {
           console.warn("Logout failed", error);
           logoutButton.disabled = false;
@@ -191,6 +224,15 @@
       location.href = authUrl("/login");
     }); // ✅ closes addEventListener
   } // ✅ closes wireLogout
+
+  function wireGoogleButton() {
+    document.addEventListener("click", async (event) => {
+      const googleBtn = event.target.closest("[data-auth-google]");
+      if (!googleBtn) return;
+      event.preventDefault();
+      await handleGoogleSignIn(googleBtn);
+    });
+  }
 
   function setFormMessage(form, message, type) {
     const messageBox = form.querySelector("[data-auth-message]");
@@ -208,6 +250,80 @@
       return next;
     }
     return "/";
+  }
+
+  async function handleGoogleSignIn(button) {
+    if (!window.__firebaseClient) {
+      setFormMessage(
+        document.querySelector("[data-auth-form]"),
+        "Google sign-in is not available right now.",
+        "error"
+      );
+      return;
+    }
+
+    if (button) {
+      button.disabled = true;
+      button.dataset.loading = "true";
+      button.innerHTML = '<span class="btn-spinner"></span><span>Signing in...</span>';
+    }
+
+    try {
+      const { idToken } = await window.__firebaseClient.signInWithGoogle();
+      if (!idToken) return; // User closed popup
+
+      const response = await fetch("/api/auth/google", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Google sign-in failed.");
+
+      currentSession = { authenticated: true, user: payload.user };
+      window.algoAuth = currentSession;
+      document.documentElement.classList.remove("auth-unverified");
+      document.documentElement.classList.add("auth-verified");
+
+      renderAuthNav();
+      updateProfileNames(currentSession.user);
+
+      location.href = getNextDestination();
+    } catch (error) {
+      if (error.code && (error.code === "auth/popup-closed-by-user" || error.code === "auth/cancelled-popup-request")) {
+        return; // Silent dismiss
+      }
+      const msg = getFirebaseUserMessage(error);
+      if (msg) {
+        setFormMessage(
+          document.querySelector("[data-auth-form]"),
+          msg,
+          "error"
+        );
+      }
+    } finally {
+      if (button) {
+        button.disabled = false;
+        delete button.dataset.loading;
+        button.innerHTML = `<svg class="google-btn-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg><span>Sign in with Google</span>`;
+      }
+    }
+  }
+
+  function getFirebaseUserMessage(error) {
+    if (!error || !error.code) return error?.message || null;
+    const map = {
+      "auth/popup-blocked": "Please allow pop-ups for this site to sign in with Google.",
+      "auth/account-exists-with-different-credential": "An account already exists with this email. Please sign in with your password instead.",
+      "auth/credential-already-in-use": "This Google account is already linked to another account.",
+      "auth/network-request-failed": "Network error. Please check your connection and try again.",
+      "auth/invalid-credential": "Sign-in failed. Please try again.",
+      "auth/user-disabled": "This account has been disabled.",
+      "auth/unauthorized-domain": "This domain is not authorized for Google sign-in.",
+    };
+    return map[error.code] || "Sign-in failed. Please try again.";
   }
 
   function wireAuthForm() {
@@ -392,6 +508,7 @@
 
       renderAuthNav();
       wireLogout();
+      wireGoogleButton();
       wireAuthForm();
       wireDeactivateAccount();
       wireChangePassword();
@@ -404,6 +521,33 @@
     }
 
     currentSession = await getSession();
+
+    // Silent re-auth with Firebase
+    if (!currentSession.authenticated && window.__firebaseClient) {
+      const firebaseUser = window.__firebaseClient.getCurrentUser();
+      if (firebaseUser) {
+        try {
+          const idToken = await firebaseUser.getIdToken(true);
+          if (idToken) {
+            const response = await fetch("/api/auth/google", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken }),
+            });
+            if (response.ok) {
+              const payload = await response.json();
+              currentSession = { authenticated: true, user: payload.user };
+              window.algoAuth = currentSession;
+            }
+          }
+        } catch (e) {
+          // Silent re-auth failed — continue as unauthenticated
+        }
+      }
+    }
+
+    firebaseReady = true;
     authReady = true;
     window.algoAuth = currentSession;
 
@@ -422,6 +566,7 @@
 
     renderAuthNav();
     wireLogout();
+    wireGoogleButton();
     wireAuthForm();
     wireDeactivateAccount();
     wireChangePassword();

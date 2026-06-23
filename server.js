@@ -136,7 +136,7 @@ async function getUserByEmail(email) {
     .limit(1)
     .get();
   if (snapshot.empty) return null;
-  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+  return { ...snapshot.docs[0].data(), id: snapshot.docs[0].id };
 }
 
 async function createUser(userData) {
@@ -147,7 +147,7 @@ async function createUser(userData) {
     return userData;
   }
   const docRef = await db.collection(COLLECTIONS.USERS).add(userData);
-  return { id: docRef.id, ...userData };
+  return { ...userData, id: docRef.id };
 }
 
 async function ensureUserStore() {
@@ -251,6 +251,7 @@ async function readJsonBody(req) {
 function sendJson(res, status, body, headers = {}) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
     ...headers,
   });
   res.end(JSON.stringify(body));
@@ -309,6 +310,42 @@ function validateRequest(req) {
 }
 
 async function handleApi(req, res, pathname) {
+  if (
+    pathname === "/api/debug-env" &&
+    req.method === "GET" &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    const keys = ["FIREBASE_API_KEY","FIREBASE_AUTH_DOMAIN","FIREBASE_PROJECT_ID","FIREBASE_STORAGE_BUCKET","FIREBASE_MESSAGING_SENDER_ID","FIREBASE_APP_ID","FIREBASE_CLIENT_EMAIL","FIREBASE_PRIVATE_KEY","SESSION_SECRET"];
+    const vars = {};
+    keys.forEach(k => {
+      const v = process.env[k];
+      vars[k] = v ? v.slice(0, 6) + "..." + v.slice(-4) : "(not set)";
+    });
+    return sendJson(res, 200, vars);
+  }
+  if (pathname === "/api/firebase-config" && req.method === "GET") {
+    const apiKey = process.env.FIREBASE_API_KEY;
+    const authDomain = process.env.FIREBASE_AUTH_DOMAIN;
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+    const messagingSenderId = process.env.FIREBASE_MESSAGING_SENDER_ID;
+    const appId = process.env.FIREBASE_APP_ID;
+
+    if (!apiKey || !authDomain || !projectId || !storageBucket || !messagingSenderId || !appId) {
+      return sendJson(res, 503, { configured: false, error: "Firebase not configured" });
+    }
+
+    return sendJson(res, 200, {
+      configured: true,
+      apiKey,
+      authDomain,
+      projectId,
+      storageBucket,
+      messagingSenderId,
+      appId,
+    });
+  }
+
   if (pathname === "/api/analyze-resume" && req.method === "POST") {
     try {
       await new Promise((resolve, reject) => {
@@ -543,6 +580,107 @@ async function handleApi(req, res, pathname) {
       { user: { id: user.id, name: user.name, email: user.email } },
       { "Set-Cookie": sessionCookie(token, req) },
     );
+  }
+
+  if (pathname === "/api/auth/google" && req.method === "POST") {
+    try {
+      const body = await readJsonBody(req);
+      const { idToken } = body;
+      if (!idToken) {
+        return sendJson(res, 400, { error: "Missing idToken" });
+      }
+
+      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
+      const { getAuth } = await import("firebase-admin/auth");
+
+      if (getApps().length === 0) {
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+        if (!projectId) {
+          return sendJson(res, 500, { error: "Firebase is not configured for authentication." });
+        }
+        if (clientEmail && privateKey) {
+          initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+        } else {
+          return sendJson(res, 500, {
+            error: "Firebase Admin requires FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY environment variables to verify ID tokens.",
+          });
+        }
+      }
+
+      let decoded;
+      try {
+        decoded = await getAuth().verifyIdToken(idToken);
+      } catch (verifyError) {
+        console.error("Token verification failed:", verifyError.message);
+        return sendJson(res, 401, { error: "Invalid token" });
+      }
+
+      const { uid, email, name, picture } = decoded;
+      const cleanEmail = (email || "").toLowerCase().trim();
+      const displayName = name || cleanEmail.split("@")[0] || "Learner";
+
+      let user = null;
+      if (useFirestore) {
+        const snapshot = await db
+          .collection(COLLECTIONS.USERS)
+          .where("firebaseUid", "==", uid)
+          .limit(1)
+          .get();
+        if (!snapshot.empty) {
+          user = { ...snapshot.docs[0].data(), id: snapshot.docs[0].id };
+        } else {
+          const emailSnapshot = await db
+            .collection(COLLECTIONS.USERS)
+            .where("email", "==", cleanEmail)
+            .limit(1)
+            .get();
+          if (!emailSnapshot.empty) {
+            user = { ...emailSnapshot.docs[0].data(), id: emailSnapshot.docs[0].id };
+          }
+        }
+      } else {
+        const users = await readUsers();
+        user = users.find(u => u.firebaseUid === uid) || users.find(u => u.email === cleanEmail);
+      }
+
+      if (user) {
+        user.name = displayName;
+        user.avatar = picture || user.avatar;
+        user.lastLogin = new Date().toISOString();
+        if (!user.firebaseUid) user.firebaseUid = uid;
+        if (!user.authProvider) user.authProvider = "google";
+        if (useFirestore) {
+          await db.collection(COLLECTIONS.USERS).doc(user.id).update({
+            name: displayName, avatar: picture || null,
+            lastLogin: new Date().toISOString(),
+            firebaseUid: uid, authProvider: "google",
+          });
+        }
+      } else {
+        const newUser = {
+          id: uid, name: displayName, email: cleanEmail,
+          avatar: picture || null, firebaseUid: uid,
+          authProvider: "google",
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+        };
+        user = await createUser(newUser);
+      }
+
+      const token = createSessionToken(user);
+      const cookie = sessionCookie(token, req);
+
+      return sendJson(res, 200, {
+        authenticated: true,
+        user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar },
+      }, { "Set-Cookie": cookie });
+
+    } catch (error) {
+      console.error("Google auth error:", error);
+      return sendJson(res, 500, { error: "Internal server error" });
+    }
   }
 
   if (pathname === "/api/change-password" && req.method === "POST") {
@@ -1308,10 +1446,14 @@ async function serveStatic(req, res, pathname) {
       : filePath;
     const ext = path.extname(target);
     const content = await fs.readFile(target);
-    res.writeHead(200, {
+    const headers = {
       "Content-Type": mimeTypes[ext] || "application/octet-stream",
       "X-Content-Type-Options": "nosniff",
-    });
+    };
+    if (ext === ".html") {
+      headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
+    }
+    res.writeHead(200, headers);
     res.end(content);
   } catch {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });

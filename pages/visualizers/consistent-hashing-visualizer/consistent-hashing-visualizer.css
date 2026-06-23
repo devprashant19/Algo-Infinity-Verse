@@ -108,3 +108,12 @@ input:checked + .slider:before { transform: translateX(20px); }
     .dht-workspace { flex-direction: column; }
     .panel-left { width: 100%; height: 50vh; border-right: none; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
 }
+
+.dht-select option {
+    background-color: #0b1121;
+    color: var(--text-primary);
+}
+
+.dht-input:focus, .dht-select:focus {
+    border-color: var(--dht-primary) !important;
+}
