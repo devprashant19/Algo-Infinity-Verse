@@ -1,0 +1,77 @@
+/* GO EDITOR THEME */
+
+.go-hero {
+  padding: 2rem;
+  text-align: center;
+}
+
+.go-title {
+  color: #00add8;
+  font-weight: 800;
+}
+
+.go-desc {
+  color: var(--text-secondary);
+}
+
+.go-container {
+  max-width: 1300px;
+  margin: auto;
+}
+
+.go-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--dark-surface);
+  border-radius: 10px 10px 0 0;
+  border: 1px solid var(--glass-border);
+}
+
+.go-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.go-run-btn {
+  background: #00add8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.go-icon-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.go-split {
+  display: flex;
+  height: 500px;
+  border: 1px solid var(--glass-border);
+  border-top: none;
+}
+
+.go-editor {
+  flex: 1;
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 1rem;
+  font-family: Fira Code;
+  border: none;
+  outline: none;
+}
+
+.go-output-body {
+  flex: 1;
+  background: #0d1117;
+  color: #00add8;
+  padding: 1rem;
+  font-family: Fira Code;
+  overflow: auto;
+}
