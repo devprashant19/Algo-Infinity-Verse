@@ -1224,6 +1224,7 @@ const advancedRoadmapSteps = [
 let roadmapTabsInitialized = false;
 let roadmapStagesInitialized = false;
 let currentQuizAnswers = {};
+let currentRoadmapSearch = '';
 
 /* Temporarily disabled because roadmapAdvancedTab is not present in the current HTML structure.*/
 function initRoadmap() {
@@ -1256,6 +1257,31 @@ function initRoadmap() {
     if (closeBtn && modal) closeBtn.addEventListener("click", () => modal.classList.remove("active"));
     if (closeBtn2 && modal) closeBtn2.addEventListener("click", () => modal.classList.remove("active"));
     if (modal) modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("active"); });
+
+    const roadmapSearchInput = document.getElementById("roadmapSearchInput");
+    const clearRoadmapSearchBtn = document.getElementById("clearRoadmapSearchBtn");
+    
+    if (roadmapSearchInput) {
+      roadmapSearchInput.addEventListener("input", (e) => {
+        currentRoadmapSearch = e.target.value;
+        if (currentRoadmapSearch.length > 0) clearRoadmapSearchBtn.classList.add("visible");
+        else clearRoadmapSearchBtn.classList.remove("visible");
+        renderBasicRoadmap();
+        renderAdvancedRoadmap();
+      });
+    }
+    
+    if (clearRoadmapSearchBtn) {
+      clearRoadmapSearchBtn.addEventListener("click", () => {
+        if (roadmapSearchInput) roadmapSearchInput.value = "";
+        currentRoadmapSearch = "";
+        clearRoadmapSearchBtn.classList.remove("visible");
+        renderBasicRoadmap();
+        renderAdvancedRoadmap();
+        if (roadmapSearchInput) roadmapSearchInput.focus();
+      });
+    }
+
     roadmapTabsInitialized = true;
   }
   renderBasicRoadmap();
@@ -1303,8 +1329,22 @@ function isRoadmapStepCompleted(step) {
 function renderBasicRoadmap() {
   const timeline = document.getElementById("basicRoadmapTimeline");
   if (!timeline) return;
+
+  const searchLower = currentRoadmapSearch.toLowerCase().trim();
+  const filteredSteps = roadmapSteps.filter(step => {
+    return step.title.toLowerCase().includes(searchLower) || 
+           step.desc.toLowerCase().includes(searchLower) ||
+           step.theory.toLowerCase().includes(searchLower);
+  });
+
+  if (filteredSteps.length === 0) {
+    timeline.innerHTML = `<div class="empty-state" style="text-align:center; padding:3rem; color:var(--text-secondary);"><p>No roadmap steps found matching "${currentRoadmapSearch}".</p></div>`;
+    return;
+  }
+
   let html = "";
-  roadmapSteps.forEach((step, index) => {
+  filteredSteps.forEach((step) => {
+    const index = roadmapSteps.indexOf(step);
     const isCompleted = isRoadmapStepCompleted(step);
     let isUnlocked = index === 0 || isRoadmapStepCompleted(roadmapSteps[index - 1]);
     let statusClass = "locked", statusText = "Locked", statusTagClass = "locked-tag";
@@ -1324,8 +1364,22 @@ function renderBasicRoadmap() {
 function renderAdvancedRoadmap() {
   const timeline = document.getElementById("advancedRoadmapTimeline");
   if (!timeline) return;
+
+  const searchLower = currentRoadmapSearch.toLowerCase().trim();
+  const filteredSteps = advancedRoadmapSteps.filter(step => {
+    return step.title.toLowerCase().includes(searchLower) || 
+           step.desc.toLowerCase().includes(searchLower) ||
+           step.theory.toLowerCase().includes(searchLower);
+  });
+
+  if (filteredSteps.length === 0) {
+    timeline.innerHTML = `<div class="empty-state" style="text-align:center; padding:3rem; color:var(--text-secondary);"><p>No roadmap steps found matching "${currentRoadmapSearch}".</p></div>`;
+    return;
+  }
+
   let html = "";
-  advancedRoadmapSteps.forEach((step, index) => {
+  filteredSteps.forEach((step) => {
+    const index = advancedRoadmapSteps.indexOf(step);
     const isCompleted = isRoadmapStepCompleted(step);
     let isUnlocked = index === 0 || isRoadmapStepCompleted(advancedRoadmapSteps[index - 1]);
     let statusClass = "locked", statusText = "Locked", statusTagClass = "locked-tag";
@@ -2094,6 +2148,11 @@ function getEditorDraft(problemId) { try { return localStorage.getItem(`editorDr
 
 function clearEditorDraft(problemId) { try { localStorage.removeItem(`editorDraft_${problemId}`); } catch (e) { console.warn('Could not clear draft:', e); } }
 
+window.addEventListener("resize", () => {
+  if (typeof updateLineNumbers === 'function') updateLineNumbers();
+  if (typeof syncScroll === 'function') syncScroll();
+});
+
 function updateLineNumbers() {
   const editor = document.getElementById("codeEditor");
   const lineNumbers = document.getElementById("lineNumbers");
@@ -2419,4 +2478,16 @@ async function runPerl() {
   } catch (err) { if (output) output.textContent = "Error: " + err.message; }
   isRunning = false;
 }
+
+
+
+// Inject Report Issue Feature on educational pages
+document.addEventListener('DOMContentLoaded', () => {
+  const path = window.location.pathname;
+  if (path.includes('/pages/learning/') || path.includes('/pages/visualizers/') || path.includes('/pages/resources/')) {
+    const script = document.createElement('script');
+    script.src = '/scripts/report-issue.js';
+    document.body.appendChild(script);
+  }
+});
 

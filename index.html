@@ -29,7 +29,23 @@
       }
     }
     </script>
-  </head>
+  
+    <!-- Theme Initialization Script -->
+    <script>
+      (function() {
+        try {
+          var storedTheme = localStorage.getItem('theme');
+          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          var theme = storedTheme || (prefersLight ? 'light' : 'dark');
+          if (theme === 'light') {
+            document.documentElement.classList.add('light-mode');
+          } else {
+            document.documentElement.classList.remove('light-mode');
+          }
+        } catch (e) {}
+      })();
+    </script>
+</head>
   <body data-page="index">
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -317,6 +333,25 @@
                 <li>Competitive Programming</li>
               </ul>
             </div>
+          </div>
+        </div>
+
+        <!-- Roadmap Controls -->
+        <div class="roadmap-controls" style="margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="roadmapSearchInput"
+              placeholder="Search algorithms, data structures, or topics..."
+            />
+            <button
+              id="clearRoadmapSearchBtn"
+              class="clear-search-btn"
+              aria-label="Clear search"
+            >
+              &times;
+            </button>
           </div>
         </div>
 
@@ -1686,6 +1721,7 @@
     <script src="script.js"></script>
     <script src="theme.js"></script>
     <script src="auth-gate.js"></script>
+    <script src="/scripts/lazy-load.js" defer></script>
 
     <script>
       loadPartial("navbar-placeholder", "/partials/navbar.html").then(() => {

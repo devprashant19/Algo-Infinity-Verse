@@ -4922,7 +4922,7 @@ section[id] {
 }
 
 /* ===== DARK/LIGHT MODE ===== */
-body.light-mode {
+html.light-mode {
     --dark-bg: #ffffff;
     --dark-surface: #f8fafc;
     --dark-card: #e2e8f0;
@@ -6139,4 +6139,12 @@ body.light-mode {
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border: 0 !important;
+}
+/* Line numbers global resize alignment fix */
+[class*="line-numbers"], [class*="code-textarea"] {
+  white-space: pre !important;
+  word-wrap: normal !important;
+}
+[class*="line-numbers"] {
+  overflow: hidden !important;
 }

@@ -15,6 +15,22 @@
 
   <!-- D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Theme Initialization Script -->
+    <script>
+      (function() {
+        try {
+          var storedTheme = localStorage.getItem('theme');
+          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          var theme = storedTheme || (prefersLight ? 'light' : 'dark');
+          if (theme === 'light') {
+            document.documentElement.classList.add('light-mode');
+          } else {
+            document.documentElement.classList.remove('light-mode');
+          }
+        } catch (e) {}
+      })();
+    </script>
 </head>
 
 <body data-page="algorithm-universe">
