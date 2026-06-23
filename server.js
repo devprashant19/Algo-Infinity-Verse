@@ -4,95 +4,43 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { initializeFirebase, getDb, COLLECTIONS } from "./firebase.js";
+import multer from "multer";
+import { extractResumeText } from "./backend/resume-analyzer/parser.js";
+import { calculateATS } from "./backend/resume-analyzer/atsScore.js";
+import { findMissingSkills } from "./backend/resume-analyzer/skills.js";
+import { getSuggestions } from "./backend/resume-analyzer/suggestions.js";
+import { analyzeWorkflow } from "./backend/repository-analyzer/cicdValidator.js";
+import { VCSFactory } from "./backend/vcs/VCSFactory.js";
+import { enqueueBulkAudit, getBatchProgress } from "./backend/jobs/queue.js";
+import "./backend/jobs/worker.js"; // Initialize worker
+import { parse as csvParse } from "csv-parse/sync";
+import { v4 as uuidv4 } from "uuid";
+import { handleReportRequest } from "./backend/reports/reportGenerator.js";
+import { getUserBenchmark } from "./backend/benchmarking/percentileService.js";
+import { Server as SocketIOServer } from "socket.io";
+import { 
+  SESSION_MAX_AGE_SECONDS, getClientIdentifier, isSignupRateLimited, 
+  recordSignupAttempt, normalizeAuthDelay, createSessionToken, 
+  verifySessionToken, hashPassword, passwordMatches, validateSignup 
+} from "./backend/services/auth.service.js";
+import { applySM2 } from "./backend/services/memory.service.js";
 
+const upload = multer({ storage: multer.memoryStorage() }).single("resume");
+const uploadCsv = multer({ storage: multer.memoryStorage() }).single("csv");
+const userSocketMap = new Map();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
+const MEMORY_FILE = path.join(DATA_DIR, "memory.json");
+const AUDITS_FILE = path.join(DATA_DIR, "audits_history.json");
 const SESSION_COOKIE = "aiv_session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-const PBKDF2_ITERATIONS = 210000;
-const PASSWORD_KEY_LENGTH = 32;
 
-// ── Rate limiting ────────────────────────────────────────────────────────────
-const SIGNUP_RATE_LIMIT = 5;
-const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
-const signupAttempts = new Map();
-
-// Periodic sweeper — runs every SIGNUP_WINDOW_MS and deletes any identifier
-// whose timestamps have all aged out of the window.  This bounds the Map to
-// only identifiers that have been active within the last window period and
-// prevents unbounded memory growth under a sustained stream of unique IPs.
-const _signupSweeper = setInterval(() => {
-  const now = Date.now();
-  for (const [identifier, timestamps] of signupAttempts) {
-    const fresh = timestamps.filter((t) => now - t < SIGNUP_WINDOW_MS);
-    if (fresh.length === 0) {
-      signupAttempts.delete(identifier);
-    } else {
-      signupAttempts.set(identifier, fresh);
-    }
-  }
-}, SIGNUP_WINDOW_MS);
-
-// Allow the process to exit cleanly even while the interval is live
-// (relevant in test environments and graceful-shutdown scenarios).
-if (_signupSweeper.unref) _signupSweeper.unref();
-
-// IPs of reverse-proxies / load-balancers that are allowed to set
-// X-Forwarded-For.  Add your proxy CIDRs / IPs here or populate via
-// the TRUSTED_PROXIES env var (comma-separated) at startup.
-const TRUSTED_PROXIES = new Set(
-  (process.env.TRUSTED_PROXIES || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
+const DELETION_LOG_FILE = path.join(
+  DATA_DIR,
+  "account-deletions.json"
 );
-
-function getClientIdentifier(req) {
-  const remoteAddress = req.socket?.remoteAddress || "unknown";
-
-  // Only honour X-Forwarded-For when the immediate TCP caller is a
-  // known trusted proxy — otherwise an attacker can supply any value
-  // they like and trivially bypass rate limiting.
-  if (
-    remoteAddress !== "unknown" &&
-    TRUSTED_PROXIES.has(remoteAddress) &&
-    req.headers["x-forwarded-for"]
-  ) {
-    // The left-most entry is the original client IP added by the
-    // first proxy in the chain; everything to the right can be spoofed.
-    const leftmost = req.headers["x-forwarded-for"].split(",")[0].trim();
-    if (leftmost) return leftmost;
-  }
-
-  return remoteAddress;
-}
-
-function isSignupRateLimited(identifier) {
-  const now = Date.now();
-  const attempts = signupAttempts.get(identifier) || [];
-  // Trim stale timestamps on every read so the per-identifier array stays
-  // small even between sweeper runs.
-  const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
-  signupAttempts.set(identifier, recentAttempts);
-  return recentAttempts.length >= SIGNUP_RATE_LIMIT;
-}
-
-function recordSignupAttempt(identifier) {
-  const now = Date.now();
-  const attempts = signupAttempts.get(identifier) || [];
-  // Trim before appending so the array never accumulates beyond
-  // SIGNUP_RATE_LIMIT + 1 entries between sweeper passes.
-  const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
-  recentAttempts.push(now);
-  signupAttempts.set(identifier, recentAttempts);
-}
-
-async function normalizeAuthDelay() {
-  return new Promise((resolve) => setTimeout(resolve, 500));
-}
 // ────────────────────────────────────────────────────────────────────────────
 
 const protectedPaths = new Set([
@@ -113,6 +61,9 @@ const mimeTypes = {
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
   ".php": "text/html; charset=utf-8",
+  ".pdf": "application/pdf",
+  ".docx":
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 };
 
 async function loadEnvFile() {
@@ -141,70 +92,6 @@ async function loadEnvFile() {
     });
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-  }
-}
-
-function base64Url(input) {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function fromBase64Url(input) {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  return Buffer.from(normalized, "base64").toString("utf8");
-}
-
-function sessionSecret() {
-  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("SESSION_SECRET is required in production.");
-  }
-  return "dev-only-change-me-with-SESSION_SECRET-before-deploying";
-}
-
-function sign(value) {
-  return crypto.createHmac("sha256", sessionSecret()).update(value).digest("base64url");
-}
-
-function createSessionToken(user) {
-  const header = base64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const payload = base64Url(
-    JSON.stringify({
-      sub: user.id,
-      name: user.name,
-      email: user.email,
-      exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
-    }),
-  );
-  const body = `${header}.${payload}`;
-  return `${body}.${sign(body)}`;
-}
-
-function verifySessionToken(token) {
-  if (!token) return null;
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [header, payload, signature] = parts;
-  const body = `${header}.${payload}`;
-  const expected = sign(body);
-  const signatureBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-  if (
-    signatureBuffer.length !== expectedBuffer.length ||
-    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
-  ) {
-    return null;
-  }
-
-  try {
-    const session = JSON.parse(fromBase64Url(payload));
-    if (!session.exp || session.exp < Math.floor(Date.now() / 1000)) return null;
-    return session;
-  } catch {
-    return null;
   }
 }
 
@@ -243,7 +130,11 @@ async function getUserByEmail(email) {
     const users = await readUsers();
     return users.find((u) => u.email === email) || null;
   }
-  const snapshot = await db.collection(COLLECTIONS.USERS).where("email", "==", email).limit(1).get();
+  const snapshot = await db
+    .collection(COLLECTIONS.USERS)
+    .where("email", "==", email)
+    .limit(1)
+    .get();
   if (snapshot.empty) return null;
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
 }
@@ -279,48 +170,80 @@ async function writeUsers(users) {
   await fs.writeFile(USERS_FILE, `${JSON.stringify(users, null, 2)}\n`);
 }
 
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto
-    .pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, PASSWORD_KEY_LENGTH, "sha256")
-    .toString("hex");
-  return { salt, hash, iterations: PBKDF2_ITERATIONS, digest: "sha256" };
-}
-
-function passwordMatches(password, stored) {
-  const calculated = crypto.pbkdf2Sync(
-    password,
-    stored.salt,
-    stored.iterations || PBKDF2_ITERATIONS,
-    PASSWORD_KEY_LENGTH,
-    stored.digest || "sha256",
-  );
-  const saved = Buffer.from(stored.hash, "hex");
-  return saved.length === calculated.length && crypto.timingSafeEqual(saved, calculated);
-}
-
-function validateSignup({ name, email, password, confirmPassword }) {
-  const cleanName = String(name || "").trim();
-  const cleanEmail = String(email || "").trim().toLowerCase();
-  const rawPassword = String(password || "");
-  const rawConfirm = String(confirmPassword || "");
-
-  if (cleanName.length < 2) return "Name must be at least 2 characters.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-    return "Enter a valid email address.";
+async function ensureAuditsStore() {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  try {
+    await fs.access(AUDITS_FILE);
+  } catch {
+    await fs.writeFile(AUDITS_FILE, "[]\n");
   }
-  if (rawPassword.length < 8) return "Password must be at least 8 characters.";
-  if (!/[a-z]/.test(rawPassword) || !/[A-Z]/.test(rawPassword) || !/\d/.test(rawPassword)) {
-    return "Password must include uppercase, lowercase, and a number.";
-  }
-  if (rawPassword !== rawConfirm) return "Passwords do not match.";
-  return null;
 }
+
+async function readAudits() {
+  await ensureAuditsStore();
+  const raw = await fs.readFile(AUDITS_FILE, "utf8");
+  return JSON.parse(raw || "[]");
+}
+
+async function writeAudits(audits) {
+  await ensureAuditsStore();
+  await fs.writeFile(AUDITS_FILE, `${JSON.stringify(audits, null, 2)}\n`);
+}
+
+// ── Memory Scanner (Spaced Repetition, SM-2) ─────────────────────────────────
+// NOTE: This currently uses local JSON file storage, matching the existing
+// users.json/feedback.json pattern in this codebase. In multi-instance or
+// serverless (VERCEL=1 / Firestore) deployments this is not a shared source
+// of truth. Migrating to Firestore (mirroring getUserByEmail/createUser's
+// useFirestore branching) is tracked as a follow-up.
+let memoryWriteQueue = Promise.resolve();
+
+async function ensureMemoryStore() {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  try {
+    await fs.access(MEMORY_FILE);
+  } catch {
+    await fs.writeFile(MEMORY_FILE, "{}\n");
+  }
+}
+
+async function readMemoryStore() {
+  await ensureMemoryStore();
+  const raw = await fs.readFile(MEMORY_FILE, "utf8");
+  return JSON.parse(raw || "{}");
+}
+
+async function writeMemoryStoreAtomic(filePath, store) {
+  const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(tmpPath, `${JSON.stringify(store, null, 2)}\n`);
+  await fs.rename(tmpPath, filePath);
+}
+
+// Serializes read-modify-write cycles so concurrent /api/memory/* requests
+// cannot clobber each other's updates. `mutator` receives the current store
+// and must return the updated store.
+async function updateMemoryStore(mutator) {
+  const task = memoryWriteQueue.then(async () => {
+    await ensureMemoryStore();
+    const raw = await fs.readFile(MEMORY_FILE, "utf8");
+    const store = JSON.parse(raw || "{}");
+    const updated = await mutator(store);
+    await writeMemoryStoreAtomic(MEMORY_FILE, store);
+    return updated;
+  });
+
+  // Prevent one rejected task from permanently breaking the queue.
+  memoryWriteQueue = task.catch(() => {});
+  return task;
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 async function readJsonBody(req) {
   let body = "";
   for await (const chunk of req) {
     body += chunk;
-    if (body.length > 1024 * 1024) throw new Error("Request body is too large.");
+    if (body.length > 1024 * 1024)
+      throw new Error("Request body is too large.");
   }
   return body ? JSON.parse(body) : {};
 }
@@ -374,7 +297,6 @@ function authorizeRequest(req, pathname) {
 
 function validateRequest(req) {
   const allowedMethods = ["GET", "POST"];
-
   if (!allowedMethods.includes(req.method)) {
     return {
       valid: false,
@@ -387,9 +309,145 @@ function validateRequest(req) {
 }
 
 async function handleApi(req, res, pathname) {
+  if (pathname === "/api/analyze-resume" && req.method === "POST") {
+    try {
+      await new Promise((resolve, reject) => {
+        upload(req, res, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      if (!req.file) {
+        return sendJson(res, 400, { error: "No resume file uploaded." });
+      }
+
+      const text = await extractResumeText(req.file);
+      const atsScore = calculateATS(text);
+      const missingSkills = findMissingSkills(text);
+      const suggestions = getSuggestions(atsScore);
+
+      return sendJson(res, 200, {
+        atsScore,
+        missingSkills,
+        suggestions,
+      });
+    } catch (error) {
+      console.error("Resume analysis error:", error);
+      if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+        return sendJson(res, 413, { error: "Resume file is too large." });
+      }
+      if (error?.message === "Unsupported file") {
+        return sendJson(res, 400, { error: "Unsupported file type. Upload PDF or DOCX." });
+      }
+      return sendJson(res, 500, { error: "Failed to analyze resume." });
+    }
+  }
+
+  if (pathname === "/api/analyze-repository" && req.method === "POST") {
+    try {
+      const payload = await readJsonBody(req);
+      const { repoUrl } = payload;
+      
+      if (!repoUrl || !repoUrl.includes("github.com")) {
+        return sendJson(res, 400, { error: "Please provide a valid GitHub repository URL." });
+      }
+
+      const provider = VCSFactory.getProvider(repoUrl);
+      const workflows = await provider.getNormalizedWorkflows();
+      
+      if (workflows.length === 0) {
+        return sendJson(res, 200, {
+          score: 0,
+          workflowsAnalyzed: 0,
+          details: { hasDependencies: false, hasTests: false },
+          recommendations: ["No GitHub Actions workflows found in .github/workflows. Add a CI/CD pipeline to automate testing."]
+        });
+      }
+
+      let bestScore = -1;
+      let overallDeps = false;
+      let overallTests = false;
+
+      for (const wf of workflows) {
+        const result = analyzeWorkflow(wf.commands);
+        if (result.score > bestScore) bestScore = result.score;
+        if (result.hasDependencies) overallDeps = true;
+        if (result.hasTests) overallTests = true;
+      }
+
+      const recommendations = [];
+      if (bestScore === 20) recommendations.push("Workflows found, but they contain no functional jobs or steps.");
+      if (bestScore === 50) recommendations.push("Add explicit testing commands (like 'npm test') to your workflow.");
+      if (bestScore === 75) recommendations.push("Ensure dependencies are installed securely before running tests.");
+      if (bestScore === 100) recommendations.push("Excellent! Fully functional CI/CD pipeline detected.");
+
+      return sendJson(res, 200, {
+        score: bestScore,
+        workflowsAnalyzed: workflows.length,
+        details: {
+          hasDependencies: overallDeps,
+          hasTests: overallTests
+        },
+        recommendations
+      });
+
+    } catch (err) {
+      console.error("Repository analysis error:", err.message);
+      return sendJson(res, 500, { error: "Failed to analyze repository. " + err.message });
+    }
+  }
+
+  // Bulk Audit APIs
+  if (pathname === "/api/audit/bulk" && req.method === "POST") {
+    try {
+      uploadCsv(req, res, async (err) => {
+        if (err) return sendJson(res, 500, { error: "Upload error." });
+        if (!req.file) return sendJson(res, 400, { error: "No CSV file uploaded." });
+        
+        try {
+          const records = csvParse(req.file.buffer.toString('utf-8'), { columns: false, skip_empty_lines: true });
+          // Extract repo URLs from the first column
+          const repoUrls = records.map(row => row[0]).filter(url => url && url.includes("github.com"));
+          
+          if (repoUrls.length === 0) {
+            return sendJson(res, 400, { error: "No valid GitHub URLs found in the CSV." });
+          }
+
+          const batchId = uuidv4();
+          await enqueueBulkAudit(batchId, repoUrls);
+
+          return sendJson(res, 202, {
+            message: "Bulk audit accepted and queued.",
+            batchId,
+            totalJobs: repoUrls.length
+          });
+        } catch (parseErr) {
+          console.error("CSV Parse Error:", parseErr);
+          return sendJson(res, 400, { error: "Failed to parse CSV file." });
+        }
+      });
+      return; // Async multer
+    } catch (err) {
+      return sendJson(res, 500, { error: "Failed to queue bulk audit." });
+    }
+  }
+
+  if (pathname.startsWith("/api/audit/bulk/") && req.method === "GET") {
+    const batchId = pathname.split("/").pop();
+    const progress = getBatchProgress(batchId);
+    if (!progress) {
+      return sendJson(res, 404, { error: "Batch not found." });
+    }
+    return sendJson(res, 200, progress);
+  }
+
   if (pathname === "/api/session" && req.method === "GET") {
     const session = getSession(req);
-    return sendJson(res, 200, { authenticated: Boolean(session), user: session });
+    return sendJson(res, 200, {
+      authenticated: Boolean(session),
+      user: session,
+    });
   }
 
   if (pathname === "/api/signup" && req.method === "POST") {
@@ -438,6 +496,8 @@ async function handleApi(req, res, pathname) {
       email,
       password: hashPassword(String(payload.password)),
       createdAt: new Date().toISOString(),
+      isDeactivated: false,
+  deactivatedAt: null,
     };
     await createUser(user);
 
@@ -452,7 +512,9 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === "/api/login" && req.method === "POST") {
     const payload = await readJsonBody(req);
-    const email = String(payload.email || "").trim().toLowerCase();
+    const email = String(payload.email || "")
+      .trim()
+      .toLowerCase();
     const password = String(payload.password || "");
     const user = useFirestore
       ? await getUserByEmail(email)
@@ -460,6 +522,19 @@ async function handleApi(req, res, pathname) {
     if (!user || !passwordMatches(password, user.password)) {
       return sendJson(res, 401, { error: "Invalid email or password." });
     }
+
+    if (user.isDeactivated) {
+  user.isDeactivated = false;
+  user.deactivatedAt = null;
+
+  const users = await readUsers();
+  const index = users.findIndex((u) => u.id === user.id);
+
+  if (index !== -1) {
+    users[index] = user;
+    await writeUsers(users);
+  }
+}
 
     const token = createSessionToken(user);
     return sendJson(
@@ -470,8 +545,223 @@ async function handleApi(req, res, pathname) {
     );
   }
 
+  if (pathname === "/api/change-password" && req.method === "POST") {
+  const session = getSession(req);
+
+  if (!session) {
+    return sendJson(res, 401, {
+      error: "Login required.",
+    });
+  }
+
+  const {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  } = await readJsonBody(req);
+
+  if (
+    !currentPassword ||
+    !newPassword ||
+    !confirmPassword
+  ) {
+    return sendJson(res, 400, {
+      error: "All fields are required.",
+    });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return sendJson(res, 400, {
+      error: "Passwords do not match.",
+    });
+  }
+
+  if (newPassword.length < 8) {
+    return sendJson(res, 400, {
+      error:
+        "Password must be at least 8 characters.",
+    });
+  }
+
+  if (
+    !/[A-Z]/.test(newPassword) ||
+    !/[a-z]/.test(newPassword) ||
+    !/\d/.test(newPassword)
+  ) {
+    return sendJson(res, 400, {
+      error:
+        "Password must contain uppercase, lowercase and number.",
+    });
+  }
+
+  const users = await readUsers();
+
+  const user = users.find(
+    (u) => u.id === session.sub
+  );
+
+  if (!user) {
+    return sendJson(res, 404, {
+      error: "User not found.",
+    });
+  }
+
+  if (
+    !passwordMatches(
+      currentPassword,
+      user.password
+    )
+  ) {
+    return sendJson(res, 400, {
+      error: "Current password is incorrect.",
+    });
+  }
+
+  user.password = hashPassword(newPassword);
+
+  await writeUsers(users);
+
+  return sendJson(
+    res,
+    200,
+    {
+      success: true,
+      message:
+        "Password updated successfully.",
+    },
+    {
+      "Set-Cookie": clearSessionCookie(),
+    }
+  );
+}
+
+  if (pathname === "/api/deactivate-account" && req.method === "POST") {
+  const session = getSession(req);
+
+  if (!session) {
+    return sendJson(res, 401, {
+      error: "Login required.",
+    });
+  }
+
+  const users = await readUsers();
+
+  const user = users.find((u) => u.id === session.sub);
+
+  if (!user) {
+    return sendJson(res, 404, {
+      error: "User not found.",
+    });
+  }
+
+  user.isDeactivated = true;
+  user.deactivatedAt = new Date().toISOString();
+
+  await writeUsers(users);
+
+  return sendJson(
+    res,
+    200,
+    { success: true },
+    {
+      "Set-Cookie": clearSessionCookie(),
+    },
+  );
+}
+
+if (
+  pathname === "/api/delete-account" &&
+  req.method === "POST"
+) {
+  const session = getSession(req);
+
+  if (!session) {
+    return sendJson(res, 401, {
+      error: "Login required.",
+    });
+  }
+
+  const payload = await readJsonBody(req);
+
+  const password = String(
+    payload.password || ""
+  );
+
+  const users = await readUsers();
+
+  const userIndex = users.findIndex(
+    (u) => u.id === session.sub
+  );
+
+  if (userIndex === -1) {
+    return sendJson(res, 404, {
+      error: "User not found.",
+    });
+  }
+
+  const user = users[userIndex];
+
+  if (
+    !passwordMatches(
+      password,
+      user.password
+    )
+  ) {
+    return sendJson(res, 401, {
+      error: "Incorrect password.",
+    });
+  }
+
+  // Log deletion event
+  const deletionEvent = {
+    userId: user.id,
+    email: user.email,
+    deletedAt: new Date().toISOString(),
+  };
+
+  let logs = [];
+
+  try {
+    const raw = await fs.readFile(
+      DELETION_LOG_FILE,
+      "utf8"
+    );
+
+    logs = JSON.parse(raw || "[]");
+  } catch {}
+
+  logs.push(deletionEvent);
+
+  await fs.writeFile(
+    DELETION_LOG_FILE,
+    JSON.stringify(logs, null, 2)
+  );
+
+  // Remove user
+  users.splice(userIndex, 1);
+
+  await writeUsers(users);
+
+  return sendJson(
+    res,
+    200,
+    {
+      success: true,
+    },
+    {
+      "Set-Cookie":
+        clearSessionCookie(),
+    }
+  );
+}
+
   if (pathname === "/api/logout" && req.method === "POST") {
-    return sendJson(res, 200, { ok: true }, { "Set-Cookie": clearSessionCookie() });
+    return sendJson(
+      res,
+      200,
+      { ok: true },
+      { "Set-Cookie": clearSessionCookie() },
+    );
   }
 
   if (pathname === "/api/feedback" && req.method === "POST") {
@@ -485,20 +775,31 @@ async function handleApi(req, res, pathname) {
 
     const { feedbackType, subject, message } = payload;
     if (!feedbackType || !subject || !message) {
-      return sendJson(res, 400, { error: "Feedback type, subject, and message are required." });
+      return sendJson(res, 400, {
+        error: "Feedback type, subject, and message are required.",
+      });
     }
 
-    const allowedTypes = ["Suggestion", "Bug Report", "Feature Request", "General Feedback"];
+    const allowedTypes = [
+      "Suggestion",
+      "Bug Report",
+      "Feature Request",
+      "General Feedback",
+    ];
     if (!allowedTypes.includes(feedbackType)) {
       return sendJson(res, 400, { error: "Invalid feedback type." });
     }
 
     if (subject.trim().length < 3) {
-      return sendJson(res, 400, { error: "Subject must be at least 3 characters long." });
+      return sendJson(res, 400, {
+        error: "Subject must be at least 3 characters long.",
+      });
     }
 
     if (message.trim().length < 10) {
-      return sendJson(res, 400, { error: "Message must be at least 10 characters long." });
+      return sendJson(res, 400, {
+        error: "Message must be at least 10 characters long.",
+      });
     }
 
     const feedbackData = {
@@ -528,7 +829,10 @@ async function handleApi(req, res, pathname) {
         }
         feedbackData.id = crypto.randomUUID();
         feedbackList.push(feedbackData);
-        await fs.writeFile(feedbackFile, JSON.stringify(feedbackList, null, 2) + "\n");
+        await fs.writeFile(
+          feedbackFile,
+          JSON.stringify(feedbackList, null, 2) + "\n",
+        );
       }
 
       return sendJson(res, 201, { success: true, feedback: feedbackData });
@@ -538,14 +842,396 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  if (pathname === "/api/interview-experiences" && req.method === "POST") {
+    const session = getSession(req);
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      return sendJson(res, 400, { error: "Invalid JSON body." });
+    }
+
+    const {
+      company,
+      role,
+      difficulty,
+      rating,
+      title,
+      content,
+      topics,
+      rounds,
+      offerStatus,
+    } = payload;
+    if (!company || !role || !difficulty || !rating || !title || !content) {
+      return sendJson(res, 400, {
+        error:
+          "Company, role, difficulty, rating, title, and content are required.",
+      });
+    }
+
+    const experienceData = {
+      id: crypto.randomUUID(),
+      userId: session ? session.sub : null,
+      userName: session ? session.name : null,
+      company: company.trim(),
+      role: role.trim(),
+      difficulty,
+      rating,
+      title: title.trim(),
+      content: content.trim(),
+      topics: Array.isArray(topics) ? topics : [],
+      rounds: rounds || null,
+      offerStatus: offerStatus || null,
+      upvotes: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      if (useFirestore) {
+        const docRef = await db
+          .collection("interviewExperiences")
+          .add(experienceData);
+        experienceData.id = docRef.id;
+      } else {
+        const filePath = path.join(DATA_DIR, "interview-experiences.json");
+        await fs.mkdir(DATA_DIR, { recursive: true });
+        let list = [];
+        try {
+          const raw = await fs.readFile(filePath, "utf8");
+          list = JSON.parse(raw || "[]");
+        } catch (err) {
+          if (err.code !== "ENOENT") throw err;
+        }
+        list.push(experienceData);
+        await fs.writeFile(filePath, JSON.stringify(list, null, 2) + "\n");
+      }
+      return sendJson(res, 201, { success: true, experience: experienceData });
+    } catch (err) {
+      console.error("Error saving interview experience:", err);
+      return sendJson(res, 500, {
+        error: "Failed to save interview experience.",
+      });
+    }
+  }
+
+  if (pathname === "/api/audit/history" && req.method === "POST") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    try {
+      const payload = await readJsonBody(req);
+      const auditData = {
+        auditId: crypto.randomUUID(),
+        userId: session.sub,
+        repoUrl: payload.repoUrl || "unknown",
+        timestamp: new Date().toISOString(),
+        overallScore: Number(payload.overallScore) || 0,
+        categoryScores: payload.categoryScores || {},
+        issuesCount: Number(payload.issuesCount) || 0,
+        recommendations: payload.recommendations || []
+      };
+
+      if (useFirestore) {
+        await db.collection(COLLECTIONS.AUDITS_HISTORY).doc(auditData.auditId).set(auditData);
+      } else {
+        const audits = await readAudits();
+        audits.push(auditData);
+        await writeAudits(audits);
+      }
+
+      return sendJson(res, 201, { success: true, auditId: auditData.auditId });
+    } catch (err) {
+      console.error("Error saving audit history:", err);
+      return sendJson(res, 500, { error: "Failed to save audit history." });
+    }
+  }
+
+  if (pathname === "/api/audit/history" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const repoUrl = url.searchParams.get("repoUrl");
+    const limit = Number(url.searchParams.get("limit")) || 20;
+
+    try {
+      let history = [];
+      if (useFirestore) {
+        let query = db.collection(COLLECTIONS.AUDITS_HISTORY)
+          .where("userId", "==", session.sub);
+        
+        if (repoUrl) {
+          query = query.where("repoUrl", "==", repoUrl);
+        }
+        
+        const snapshot = await query.orderBy("timestamp", "desc").limit(limit).get();
+        history = snapshot.docs.map(doc => doc.data());
+      } else {
+        const allAudits = await readAudits();
+        history = allAudits.filter(a => a.userId === session.sub);
+        if (repoUrl) {
+          history = history.filter(a => a.repoUrl === repoUrl);
+        }
+        history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        history = history.slice(0, limit);
+      }
+
+      return sendJson(res, 200, history);
+    } catch (err) {
+      console.error("Error fetching audit history:", err);
+      return sendJson(res, 500, { error: "Failed to fetch audit history." });
+    }
+  }
+
+  if (pathname === "/api/audit/trends" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const repoUrl = url.searchParams.get("repoUrl");
+
+    try {
+      let history = [];
+      if (useFirestore) {
+        let query = db.collection(COLLECTIONS.AUDITS_HISTORY)
+          .where("userId", "==", session.sub);
+        if (repoUrl) query = query.where("repoUrl", "==", repoUrl);
+        const snapshot = await query.orderBy("timestamp", "asc").get();
+        history = snapshot.docs.map(doc => doc.data());
+      } else {
+        const allAudits = await readAudits();
+        history = allAudits.filter(a => a.userId === session.sub);
+        if (repoUrl) history = history.filter(a => a.repoUrl === repoUrl);
+        history.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      }
+
+      const trends = history.map(a => ({
+        timestamp: a.timestamp,
+        overallScore: a.overallScore
+      }));
+
+      return sendJson(res, 200, trends);
+    } catch (err) {
+      console.error("Error fetching audit trends:", err);
+      return sendJson(res, 500, { error: "Failed to fetch audit trends." });
+    }
+  }
+
+  if (pathname === "/api/memory/log" && req.method === "POST") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      return sendJson(res, 400, { error: "Invalid JSON body." });
+    }
+
+    const { topic, quality } = payload;
+    if (!topic || typeof topic !== "string" || topic.trim().length < 1) {
+      return sendJson(res, 400, { error: "Topic is required." });
+    }
+    if (
+      quality === undefined ||
+      isNaN(Number(quality)) ||
+      Number(quality) < 0 ||
+      Number(quality) > 5
+    ) {
+      return sendJson(res, 400, {
+        error: "Quality must be a number between 0 and 5.",
+      });
+    }
+
+    const trimmedTopic = topic.trim();
+    const updatedCard = await updateMemoryStore((store) => {
+      const userCards = store[session.sub] || {};
+      const existing = userCards[trimmedTopic] || { topic: trimmedTopic };
+      const updated = applySM2(existing, quality);
+      userCards[trimmedTopic] = updated;
+      store[session.sub] = userCards;
+      return updated;
+    });
+
+    return sendJson(res, 200, { success: true, card: updatedCard });
+  }
+
+  if (pathname === "/api/memory/due" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    const store = await readMemoryStore();
+    const userCards = store[session.sub] || {};
+    const now = new Date();
+    const due = Object.values(userCards).filter(
+      (card) => new Date(card.nextReviewDate) <= now,
+    );
+
+    return sendJson(res, 200, { success: true, due });
+  }
+
+  if (pathname === "/api/memory/all" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Login required." });
+
+    const store = await readMemoryStore();
+    const userCards = store[session.sub] || {};
+
+    return sendJson(res, 200, {
+      success: true,
+      cards: Object.values(userCards),
+    });
+  }
+
+  // ── Quiz Results (Firestore) ──────────────────────────────────────────────
+  if (pathname === "/api/quiz-results" && req.method === "POST") {
+    const session = getSession(req);
+    if (!session)
+      return sendJson(res, 401, { error: "Authentication required." });
+    if (!useFirestore)
+      return sendJson(res, 503, { error: "User store unavailable." });
+
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      return sendJson(res, 400, { error: "Invalid JSON body." });
+    }
+
+    const {
+      quizId,
+      quizTitle,
+      score,
+      totalQuestions,
+      correctAnswers,
+      percentage,
+      topic,
+    } = payload;
+    if (
+      !quizId ||
+      !quizTitle ||
+      score === undefined ||
+      !totalQuestions ||
+      correctAnswers === undefined ||
+      percentage === undefined ||
+      !topic
+    ) {
+      return sendJson(res, 400, {
+        error:
+          "Missing required fields: quizId, quizTitle, score, totalQuestions, correctAnswers, percentage, topic.",
+      });
+    }
+
+    if (typeof score !== "number" || score < 0)
+      return sendJson(res, 400, {
+        error: "score must be a non-negative number.",
+      });
+    if (typeof totalQuestions !== "number" || totalQuestions < 1)
+      return sendJson(res, 400, { error: "totalQuestions must be >= 1." });
+    if (typeof correctAnswers !== "number" || correctAnswers < 0)
+      return sendJson(res, 400, { error: "correctAnswers must be >= 0." });
+    if (correctAnswers > totalQuestions)
+      return sendJson(res, 400, {
+        error: "correctAnswers cannot exceed totalQuestions.",
+      });
+    if (typeof percentage !== "number" || percentage < 0 || percentage > 100)
+      return sendJson(res, 400, { error: "percentage must be 0-100." });
+
+    try {
+      const attemptId = crypto.randomUUID();
+      const attempt = {
+        quizId: String(quizId),
+        quizTitle: String(quizTitle),
+        score: Number(score),
+        totalQuestions: Number(totalQuestions),
+        correctAnswers: Number(correctAnswers),
+        percentage: Number(percentage),
+        topic: String(topic),
+        completedAt: new Date().toISOString(),
+      };
+
+      await db
+        .collection("users")
+        .doc(session.sub)
+        .collection("quizResults")
+        .doc(attemptId)
+        .set(attempt);
+
+      return sendJson(res, 201, { success: true, attemptId, attempt });
+    } catch (error) {
+      console.error("Failed to save quiz result:", error);
+      return sendJson(res, 500, { error: "Failed to save quiz result." });
+    }
+  }
+
+  if (pathname === "/api/quiz-results" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session)
+      return sendJson(res, 401, { error: "Authentication required." });
+    if (!useFirestore)
+      return sendJson(res, 503, { error: "User store unavailable." });
+
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const parsedLimit = parseInt(url.searchParams.get("limit") || "20", 10);
+      const limit = Math.min(Number.isNaN(parsedLimit) ? 20 : parsedLimit, 100);
+      const topic = url.searchParams.get("topic");
+
+      let query = db
+        .collection("users")
+        .doc(session.sub)
+        .collection("quizResults")
+        .orderBy("completedAt", "desc")
+        .limit(limit);
+
+      if (topic) {
+        query = query.where("topic", "==", topic);
+      }
+
+      const snapshot = await query.get();
+      const results = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return sendJson(res, 200, {
+        success: true,
+        results,
+        count: results.length,
+      });
+    } catch (error) {
+      console.error("Failed to fetch quiz results:", error);
+      return sendJson(res, 500, { error: "Failed to fetch quiz results." });
+    }
+  }
+
+  if (pathname === "/api/reports/export/pdf" || pathname === "/api/reports/export/image") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Authentication required." });
+    return await handleReportRequest(req, res, pathname, session);
+  }
+
+  if (pathname === "/api/user/benchmark" && req.method === "GET") {
+    const session = getSession(req);
+    if (!session) return sendJson(res, 401, { error: "Authentication required." });
+    
+    try {
+        const benchmark = await getUserBenchmark(session.sub);
+        return sendJson(res, 200, { success: true, benchmark });
+    } catch (err) {
+        console.error("Benchmark error:", err);
+        return sendJson(res, 500, { error: "Failed to generate benchmark." });
+    }
+  }
+
   return sendJson(res, 404, { error: "Not found." });
 }
 
 function resolveStaticPath(pathname) {
-  const routes = {
-    "/": "index.html",
-    "/login": "login.html",
-    "/signup": "signup.html",
+const routes = {
+  "/": "index.html",
+  "/login": "pages/auth/login.html",
+  "/signup": "pages/auth/signup.html",
     "/community": "community.html",
     "/python-learning": "python-learning.html",
     "/javascript-learning": "javascript-learning.html",
@@ -558,6 +1244,9 @@ function resolveStaticPath(pathname) {
     "/oop-learning": "oop-learning.html",
     "/feedback": "feedback.html",
     "/feedback.html": "feedback.html",
+    "/memory-scanner": "memory-scanner.html",
+    "/memory-scanner.html": "memory-scanner.html",
+    "/algorithm-timeline": "algorithm-timeline.html",
     "/support-page": "support-page/index.html",
     "/support-page/": "support-page/index.html",
   };
@@ -614,7 +1303,9 @@ async function serveStatic(req, res, pathname) {
 
   try {
     const stat = await fs.stat(filePath);
-    const target = stat.isDirectory() ? path.join(filePath, "index.html") : filePath;
+    const target = stat.isDirectory()
+      ? path.join(filePath, "index.html")
+      : filePath;
     const ext = path.extname(target);
     const content = await fs.readFile(target);
     res.writeHead(200, {
@@ -631,9 +1322,7 @@ async function serveStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-    const pathname = normalizePathname(
-      decodeURIComponent(url.pathname)
-    );
+    const pathname = normalizePathname(decodeURIComponent(url.pathname));
 
     const requestValidation = validateRequest(req);
 
@@ -664,13 +1353,95 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-export { server };
+// --- PHASE 1 ADDITION: SOCKET.IO LOGIC ---
+const io = new SocketIOServer(server);
+
+io.on("connection", (socket) => {
+console.log("🟢 New client connected:", socket.id);
+
+ 
+
+// Draw events (whiteboard)
+socket.on('draw', (data) => {
+    // Broadcast to everyone else in the room
+    socket.to(data.roomId).emit('receive-draw', data);
+});
+
+// Clear board
+socket.on('clear-board', ({ roomId }) => {
+    socket.to(roomId).emit('receive-clear');
+});
+
+// Shared notes
+socket.on('share-notes', ({ roomId, text }) => {
+    socket.to(roomId).emit('receive-notes', text);
+});
+
+// Chat messages
+socket.on('chat-message', (data) => {
+    socket.to(data.roomId).emit('chat-message', data);
+});
+
+// ── VOICE CHAT (WebRTC signaling) ──
+
+socket.on('voice-join', ({ roomId, userId }) => {
+    socket.to(roomId).emit('voice-user-joined', { userId });
+});
+
+socket.on('voice-leave', ({ roomId, userId }) => {
+    socket.to(roomId).emit('voice-user-left', { userId });
+});
+
+// WebRTC offer
+socket.on('voice-offer', ({ roomId, offer, to, from }) => {
+    const targetSocketId = userSocketMap.get(to);
+    if (targetSocketId) io.to(targetSocketId).emit('voice-offer', { offer, from });
+});
+
+socket.on('voice-answer', ({ roomId, answer, to, from }) => {
+    const targetSocketId = userSocketMap.get(to);
+    if (targetSocketId) io.to(targetSocketId).emit('voice-answer', { answer, from });
+});
+
+socket.on('voice-ice', ({ roomId, candidate, to, from }) => {
+    const targetSocketId = userSocketMap.get(to);
+    if (targetSocketId) io.to(targetSocketId).emit('voice-ice', { candidate, from });
+});
+
+// ── END OF ADDITIONS ──
+
+
+  socket.on("join-room", (roomId, userId) => {
+      socket.join(roomId);
+      // Store user mapping
+    userSocketMap.set(userId, socket.id);
+    socket.userId = userId;
+    socket.roomId = roomId;
+     console.log(`👥 User ${userId} joined Room ${roomId}`);
+      
+      socket.to(roomId).emit("user-connected", userId);
+
+      socket.on("disconnect", () => {
+    if (socket.userId) {
+        userSocketMap.delete(socket.userId);
+        if (socket.roomId) {
+            socket.to(socket.roomId).emit("user-disconnected", socket.userId);
+        }
+    }
+});
+  });
+});
+// -----------------------------------------
+
+export { server, hashPassword, passwordMatches, applySM2, validateSignup };
 if (process.env.VERCEL === "1") {
   db = initializeFirebase();
   useFirestore = !!db;
 }
 
-if (process.env.VERCEL !== "1") {
+
+
+if (process.env.VERCEL !== "1" && process.env.NODE_ENV !== "test") {
   loadEnvFile()
     .then(() => {
       db = initializeFirebase();
@@ -682,7 +1453,9 @@ if (process.env.VERCEL !== "1") {
         const url = `http://${host}:${port}`;
         console.log(`Server running at ${url}`);
         if (!process.env.SESSION_SECRET) {
-          console.warn("Using a development SESSION_SECRET. Set SESSION_SECRET before deploying.");
+          console.warn(
+            "Using a development SESSION_SECRET. Set SESSION_SECRET before deploying.",
+          );
         }
       });
     })
@@ -691,3 +1464,4 @@ if (process.env.VERCEL !== "1") {
       process.exit(1);
     });
 }
+

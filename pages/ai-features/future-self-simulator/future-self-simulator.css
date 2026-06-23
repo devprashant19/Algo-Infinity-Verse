@@ -1,0 +1,312 @@
+/* ─────────────────────────────────────────────
+   Future Self Simulator
+   ───────────────────────────────────────────── */
+
+.fss-gradient {
+  background: linear-gradient(135deg, #a78bfa 0%, #06b6d4 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Log card */
+.fss-log-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.fss-log-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, #a78bfa, #06b6d4);
+}
+
+.fss-log-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fss-form-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr auto;
+  gap: 0.75rem;
+}
+
+.fss-input,
+.fss-select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  font-family: Poppins, sans-serif;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.fss-input:focus,
+.fss-select:focus { border-color: #a78bfa; }
+
+.fss-select { cursor: pointer; }
+
+.fss-log-btn {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.fss-log-hint {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  min-height: 1.2em;
+}
+
+.fss-log-hint.success { color: #22c55e; }
+.fss-log-hint.error   { color: #ef4444; }
+
+/* Dashboard cards (shared structure) */
+.fss-dashboard-card,
+.fss-schedule-card,
+.fss-topics-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+}
+
+.fss-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.fss-dashboard-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fss-dashboard-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.fss-empty-state {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+/* Risk bars */
+.fss-risk-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.fss-risk-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fss-risk-label {
+  width: 160px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fss-risk-track {
+  flex: 1;
+  height: 30px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fss-risk-fill {
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.75rem;
+  font-family: "Fira Code", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  width: 0;
+  transition: width 1s ease;
+}
+
+.fss-risk-fill.critical { background: linear-gradient(90deg, #dc2626, #ef4444); }
+.fss-risk-fill.high     { background: linear-gradient(90deg, #ea580c, #f59e0b); }
+.fss-risk-fill.medium   { background: linear-gradient(90deg, #ca8a04, #eab308); }
+.fss-risk-fill.low      { background: linear-gradient(90deg, #16a34a, #22c55e); }
+
+/* Revision schedule */
+.fss-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fss-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--glass-border);
+}
+
+.fss-schedule-item.day-today    { border-left-color: #ef4444; }
+.fss-schedule-item.day-tomorrow { border-left-color: #f59e0b; }
+.fss-schedule-item.day-later    { border-left-color: #22c55e; }
+
+.fss-schedule-day {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.fss-schedule-item.day-today    .fss-schedule-day { color: #ef4444; }
+.fss-schedule-item.day-tomorrow .fss-schedule-day { color: #f59e0b; }
+.fss-schedule-item.day-later    .fss-schedule-day { color: #22c55e; }
+
+.fss-schedule-topic {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.fss-schedule-risk {
+  font-family: "Fira Code", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Topics list */
+.fss-topics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.fss-topic-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+}
+
+.fss-topic-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fss-topic-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fss-topic-meta {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.fss-topic-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+}
+
+.fss-topic-badge.critical { background: rgba(239,68,68,0.12);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.fss-topic-badge.high     { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+.fss-topic-badge.medium   { background: rgba(234,179,8,0.12);  color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+.fss-topic-badge.low      { background: rgba(34,197,94,0.12);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+
+.fss-topic-delete {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem;
+  transition: color 0.2s ease;
+}
+
+.fss-topic-delete:hover { color: #ef4444; }
+
+.fss-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: Poppins, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.fss-clear-btn:hover { color: #ef4444; border-color: #ef4444; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fss-form-row     { grid-template-columns: 1fr; }
+  .fss-risk-label   { width: 100px; font-size: 0.75rem; }
+  .fss-schedule-day { width: 70px; font-size: 0.7rem; }
+  .fss-topic-row    { flex-direction: column; align-items: flex-start; }
+}

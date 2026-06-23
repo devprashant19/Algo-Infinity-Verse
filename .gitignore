@@ -4,6 +4,9 @@
 *.swp
 *.swo
 *~
+# Dependencies
+node_modules/
+backend/node_modules/
 
 # OS
 .DS_Store
@@ -29,4 +32,9 @@ yarn-error.log*
 # Local auth data
 data/
 
+# Testing
+playwright-report/
+test-results/
+
 node_modules/
+dist/

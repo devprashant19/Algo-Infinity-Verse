@@ -1,0 +1,337 @@
+/* ─────────────────────────────────────────────
+   Wrong Turn Replay
+   ───────────────────────────────────────────── */
+
+.wtr-gradient {
+  background: linear-gradient(135deg, #ef4444 0%, #a78bfa 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Session selector */
+.wtr-session-selector {
+  margin-bottom: 1.5rem;
+}
+
+.wtr-selector-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wtr-session-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.wtr-session-tab {
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-family: Poppins, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.wtr-session-tab:hover { color: var(--text-primary); border-color: #ef4444; }
+
+.wtr-session-tab.active {
+  background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(167,139,250,0.15));
+  border-color: #ef4444;
+  color: #ef4444;
+  box-shadow: 0 0 12px rgba(239,68,68,0.2);
+}
+
+/* Session summary card */
+.wtr-session-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.wtr-session-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, #ef4444, #a78bfa);
+}
+
+.wtr-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.wtr-session-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.wtr-session-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wtr-session-meta span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+
+.wtr-verdict {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.wtr-verdict.solved   { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.wtr-verdict.tle      { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.wtr-verdict.wrong    { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+
+.wtr-session-desc {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* Controls */
+.wtr-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.wtr-play-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wtr-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: Poppins, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.wtr-reset-btn:hover { color: var(--text-primary); border-color: #a78bfa; }
+
+.wtr-speed-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.wtr-speed-control select {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-family: Poppins, sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* Timeline card */
+.wtr-timeline-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+}
+
+.wtr-timeline-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wtr-timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.wtr-timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  width: 2px;
+  background: var(--glass-border);
+}
+
+/* Timeline event */
+.wtr-event {
+  position: relative;
+  padding-bottom: 1.5rem;
+  opacity: 0.35;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateX(-6px);
+}
+
+.wtr-event:last-child { padding-bottom: 0; }
+
+.wtr-event.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.wtr-event-dot {
+  position: absolute;
+  left: -2rem;
+  top: 0.15rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  background: var(--bg-primary, #0a0a1a);
+  transition: all 0.3s ease;
+}
+
+.wtr-event.good .wtr-event-dot   { border-color: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+.wtr-event.bad .wtr-event-dot    { border-color: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+.wtr-event.neutral .wtr-event-dot{ border-color: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+
+.wtr-event-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.wtr-event-time {
+  font-family: "Fira Code", monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 48px;
+}
+
+.wtr-event-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wtr-event-icon { font-size: 0.85rem; margin-right: 0.3rem; }
+.wtr-event.good .wtr-event-icon { color: #22c55e; }
+.wtr-event.bad  .wtr-event-icon { color: #ef4444; }
+.wtr-event.neutral .wtr-event-icon { color: #f59e0b; }
+
+.wtr-event-note {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid var(--glass-border);
+}
+
+.wtr-event.good .wtr-event-note    { border-left-color: #22c55e; }
+.wtr-event.bad .wtr-event-note     { border-left-color: #ef4444; }
+.wtr-event.neutral .wtr-event-note { border-left-color: #f59e0b; }
+
+/* Feedback card */
+.wtr-feedback-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.wtr-feedback-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wtr-feedback-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wtr-feedback-body {
+  color: var(--text-secondary);
+  line-height: 1.75;
+  font-size: 0.92rem;
+}
+
+.wtr-feedback-body ul {
+  margin: 0.75rem 0 0 1.1rem;
+  padding: 0;
+}
+
+.wtr-feedback-body li { margin-bottom: 0.5rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wtr-session-header  { flex-direction: column; }
+  .wtr-session-tabs    { gap: 0.4rem; }
+  .wtr-session-tab     { font-size: 0.78rem; padding: 0.45rem 0.8rem; }
+  .wtr-controls        { flex-direction: column; align-items: stretch; }
+  .wtr-speed-control    { margin-left: 0; justify-content: space-between; }
+  .wtr-event-time       { min-width: 40px; font-size: 0.72rem; }
+}
