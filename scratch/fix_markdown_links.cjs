@@ -34,6 +34,5 @@ function processDir(dir) {
     }
 }
 
-processDir(path.join(__dirname, '../pages/visualizers'));
-processDir(path.join(__dirname, '../pages/sort'));
+processDir(path.join(__dirname, '../pages'));
 console.log('Markdown links fix complete.');
