@@ -243,53 +243,27 @@ function ipmUpdateTimerUI() {
 function ipmStartTimer() {
   if (ipmTimer.running || ipmTimer.left <= 0) return;
   ipmTimer.running = true;
+  ipmTimer.deadline = Date.now() + (ipmTimer.left * 1000);
 
   var startBtn  = document.getElementById('ipmStartBtn');
   var pauseBtn  = document.getElementById('ipmPauseBtn');
   if (startBtn) startBtn.classList.add('hidden');
   if (pauseBtn) pauseBtn.classList.remove('hidden');
 
- var ipmTimer = {
-   total    : 30 * 60,
-   left     : 30 * 60,
-   running  : false,
-   interval : null,
-   deadline : null,
- };
-
- function ipmStartTimer() {
-   if (ipmTimer.running || ipmTimer.left <= 0) return;
-   ipmTimer.running = true;
-   ipmTimer.deadline = Date.now() + (ipmTimer.left * 1000);
-
-   var startBtn  = document.getElementById('ipmStartBtn');
-   var pauseBtn  = document.getElementById('ipmPauseBtn');
-   if (startBtn) startBtn.classList.add('hidden');
-   if (pauseBtn) pauseBtn.classList.remove('hidden');
-
-   ipmTimer.interval = setInterval(function() {
-     var remaining = Math.max(0, Math.ceil((ipmTimer.deadline - Date.now()) / 1000));
-     ipmTimer.left = remaining;
-     ipmUpdateTimerUI();
-     if (ipmTimer.left <= 0) {
-       clearInterval(ipmTimer.interval);
-       ipmTimer.interval = null;
-       ipmTimer.running = false;
-       var pBtn = document.getElementById('ipmPauseBtn');
-       var sBtn = document.getElementById('ipmStartBtn');
-       if (pBtn) pBtn.classList.add('hidden');
-       if (sBtn) { sBtn.classList.remove('hidden'); sBtn.innerHTML = '<i class="fas fa-check"></i> Time\'s Up!'; sBtn.disabled = true; }
-     }
-   }, 250);
- }
+  ipmTimer.interval = setInterval(function() {
+    var remaining = Math.max(0, Math.ceil((ipmTimer.deadline - Date.now()) / 1000));
+    ipmTimer.left = remaining;
+    ipmUpdateTimerUI();
+    if (ipmTimer.left <= 0) {
       clearInterval(ipmTimer.interval);
+      ipmTimer.interval = null;
       ipmTimer.running = false;
       var pBtn = document.getElementById('ipmPauseBtn');
       var sBtn = document.getElementById('ipmStartBtn');
       if (pBtn) pBtn.classList.add('hidden');
       if (sBtn) { sBtn.classList.remove('hidden'); sBtn.innerHTML = '<i class="fas fa-check"></i> Time\'s Up!'; sBtn.disabled = true; }
     }
-  }, 1000);
+  }, 250);
 }
 
 function ipmPauseTimer() {

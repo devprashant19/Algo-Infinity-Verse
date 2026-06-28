@@ -142,10 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.replayOutput.textContent = snap.replayText;
 
     elements.viewButtons.forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.view === view);
-    });
-
-    localStorage.setItem("learning-mirror-view", view);
       const isSelected = btn.dataset.view === view;
       btn.classList.toggle("active", isSelected);
       btn.setAttribute("aria-selected", isSelected);

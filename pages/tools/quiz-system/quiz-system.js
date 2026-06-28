@@ -619,7 +619,7 @@ class QuizController {
         }
     }
 
-    handleFinishQuiz() {
+    async handleFinishQuiz() {
         const scoreData = this.state.getFinalScore();
         const allTimeMistakes = this.state.getMistakePersistence();
         this.ui.renderResults(scoreData, allTimeMistakes);

@@ -140,7 +140,6 @@ function loadCards() {
     return [];
   }
 }
-}
 
 function saveCards(cards) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));

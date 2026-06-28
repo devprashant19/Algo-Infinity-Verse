@@ -112,12 +112,6 @@ const {
   logPanel,
   clearLogsBtn
 } = loadRequiredElements();
-const structureTitle = document.getElementById("structureTitle");
-const auxiliaryTitle = document.getElementById("auxiliaryTitle");
-const auxiliaryStructureWrapper = document.getElementById("auxiliaryStructureWrapper");
-const topologicalTape = document.getElementById("topologicalTape");
-const logPanel = document.getElementById("logPanel");
-const clearLogsBtn = document.getElementById("clearLogsBtn");
 
 // Interaction Temp Variables
 let edgeSourceNode = null;
