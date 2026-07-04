@@ -544,7 +544,7 @@
     box.setAttribute("role", "alert");
 
     box.textContent =
-      "Authentication requires running the server. Open this app at http://127.0.0.1:3000 (run: npm start or node server.js).";
+      "Authentication requires running the server. Open this app at  (run: npm start or node server.js).";
 
     container.prepend(box);
 

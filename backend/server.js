@@ -37,10 +37,15 @@ const MEMORY_FILE = path.join(DATA_DIR, "memory.json");
 const SESSION_COOKIE = "aiv_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
+// ── Rate limiting ────────────────────────────────────────────────────────────
 const SIGNUP_RATE_LIMIT = 5;
 const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
 const signupAttempts = new Map();
 
+// Periodic sweeper — runs every SIGNUP_WINDOW_MS and deletes any identifier
+// whose timestamps have all aged out of the window.  This bounds the Map to
+// only identifiers that have been active within the last window period and
+// prevents unbounded memory growth under a sustained stream of unique IPs.
 const _signupSweeper = setInterval(() => {
   const now = Date.now();
   for (const [identifier, timestamps] of signupAttempts) {
@@ -53,8 +58,13 @@ const _signupSweeper = setInterval(() => {
   }
 }, SIGNUP_WINDOW_MS);
 
+// Allow the process to exit cleanly even while the interval is live
+// (relevant in test environments and graceful-shutdown scenarios).
 if (_signupSweeper.unref) _signupSweeper.unref();
 
+// IPs of reverse-proxies / load-balancers that are allowed to set
+// X-Forwarded-For.  Add your proxy CIDRs / IPs here or populate via
+// the TRUSTED_PROXIES env var (comma-separated) at startup.
 const TRUSTED_PROXIES = new Set(
   (process.env.TRUSTED_PROXIES || "")
     .split(",")
@@ -65,11 +75,16 @@ const TRUSTED_PROXIES = new Set(
 function getClientIdentifier(req) {
   const remoteAddress = req.socket?.remoteAddress || "unknown";
 
+  // Only honour X-Forwarded-For when the immediate TCP caller is a
+  // known trusted proxy — otherwise an attacker can supply any value
+  // they like and trivially bypass rate limiting.
   if (
     remoteAddress !== "unknown" &&
     TRUSTED_PROXIES.has(remoteAddress) &&
     req.headers["x-forwarded-for"]
   ) {
+    // The left-most entry is the original client IP added by the
+    // first proxy in the chain; everything to the right can be spoofed.
     const leftmost = req.headers["x-forwarded-for"].split(",")[0].trim();
     if (leftmost) return leftmost;
   }
@@ -80,6 +95,8 @@ function getClientIdentifier(req) {
 function isSignupRateLimited(identifier) {
   const now = Date.now();
   const attempts = signupAttempts.get(identifier) || [];
+  // Trim stale timestamps on every read so the per-identifier array stays
+  // small even between sweeper runs.
   const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
   signupAttempts.set(identifier, recentAttempts);
   return recentAttempts.length >= SIGNUP_RATE_LIMIT;
@@ -88,6 +105,8 @@ function isSignupRateLimited(identifier) {
 function recordSignupAttempt(identifier) {
   const now = Date.now();
   const attempts = signupAttempts.get(identifier) || [];
+  // Trim before appending so the array never accumulates beyond
+  // SIGNUP_RATE_LIMIT + 1 entries between sweeper passes.
   const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
   recentAttempts.push(now);
   signupAttempts.set(identifier, recentAttempts);
@@ -96,11 +115,12 @@ function recordSignupAttempt(identifier) {
 async function normalizeAuthDelay() {
   return new Promise((resolve) => setTimeout(resolve, 500));
 }
+// ── Login Rate Limiting (failed attempts only) ──────────────────────────────
+const LOGIN_RATE_LIMIT = 5; // max failed attempts before lockout
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15-minute sliding window
+const loginFailures = new Map(); // identifier → [timestamp, ...]
 
-const LOGIN_RATE_LIMIT = 5;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const loginFailures = new Map();
-
+// Periodic sweeper — mirrors the signup sweeper to prevent unbounded growth.
 const _loginSweeper = setInterval(() => {
   const now = Date.now();
   for (const [identifier, timestamps] of loginFailures) {
@@ -114,14 +134,22 @@ const _loginSweeper = setInterval(() => {
 }, LOGIN_WINDOW_MS);
 if (_loginSweeper.unref) _loginSweeper.unref();
 
+/**
+ * Returns true when the given identifier has reached the failed-login limit
+ * within the current sliding window.
+ */
 function isLoginRateLimited(identifier) {
   const now = Date.now();
   const attempts = loginFailures.get(identifier) || [];
   const recent = attempts.filter((t) => now - t < LOGIN_WINDOW_MS);
-  loginFailures.set(identifier, recent);
+  loginFailures.set(identifier, recent); // keep array trimmed
   return recent.length >= LOGIN_RATE_LIMIT;
 }
 
+/**
+ * Records a single failed login attempt for the given identifier.
+ * Only call this after confirming the credentials were wrong.
+ */
 function recordLoginFailure(identifier) {
   const now = Date.now();
   const attempts = loginFailures.get(identifier) || [];
@@ -130,9 +158,14 @@ function recordLoginFailure(identifier) {
   loginFailures.set(identifier, recent);
 }
 
+/**
+ * Clears the failure counter for the given identifier on successful login
+ * so a legitimate user is never locked out after a prior mistake.
+ */
 function clearLoginFailures(identifier) {
   loginFailures.delete(identifier);
 }
+// ────────────────────────────────────────────────────────────────────────────
 
 const protectedPaths = new Set([
   "/community",
@@ -329,6 +362,12 @@ async function writeUsers(users) {
   await fs.writeFile(USERS_FILE, `${JSON.stringify(users, null, 2)}\n`);
 }
 
+// ── Memory Scanner (Spaced Repetition, SM-2) ─────────────────────────────────
+// NOTE: This currently uses local JSON file storage, matching the existing
+// users.json/feedback.json pattern in this codebase. In multi-instance or
+// serverless (VERCEL=1 / Firestore) deployments this is not a shared source
+// of truth. Migrating to Firestore (mirroring getUserByEmail/createUser's
+// useFirestore branching) is tracked as a follow-up.
 let memoryWriteQueue = Promise.resolve();
 
 async function ensureMemoryStore() {
@@ -352,6 +391,9 @@ async function writeMemoryStoreAtomic(filePath, store) {
   await fs.rename(tmpPath, filePath);
 }
 
+// Serializes read-modify-write cycles so concurrent /api/memory/* requests
+// cannot clobber each other's updates. `mutator` receives the current store
+// and must return the updated store.
 async function updateMemoryStore(mutator) {
   const task = memoryWriteQueue.then(async () => {
     await ensureMemoryStore();
@@ -362,10 +404,11 @@ async function updateMemoryStore(mutator) {
     return updated;
   });
 
+  // Prevent one rejected task from permanently breaking the queue.
   memoryWriteQueue = task.catch(() => {});
   return task;
 }
-
+// SM-2 algorithm: quality is 0-5 (0 = total blackout, 5 = perfect recall)
 function applySM2(card, quality) {
   const q = Math.max(0, Math.min(5, Number(quality)));
   let { repetitions = 0, easeFactor = 2.5, interval = 0 } = card || {};
@@ -397,6 +440,7 @@ function applySM2(card, quality) {
     lastQuality: q,
   };
 }
+// ──────────────────────────────────────────────────────────────────────────
 
 function validateSignup({ name, email, password, confirmPassword }) {
   const cleanName = String(name || "").trim();
@@ -410,14 +454,56 @@ function validateSignup({ name, email, password, confirmPassword }) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     return "Enter a valid email address.";
   }
-  if (rawPassword.length < 8) return "Password must be at least 8 characters.";
-  if (
-    !/[a-z]/.test(rawPassword) ||
-    !/[A-Z]/.test(rawPassword) ||
-    !/\d/.test(rawPassword)
-  ) {
-    return "Password must include uppercase, lowercase, and a number.";
+
+  // Strong Password Validation
+  if (rawPassword.length < 8) {
+    return "Password must be at least 8 characters long.";
   }
+  if (rawPassword.length > 64) {
+    return "Password must not exceed 64 characters.";
+  }
+  if (!/[a-z]/.test(rawPassword)) {
+    return "Password must include at least one lowercase letter.";
+  }
+  if (!/[A-Z]/.test(rawPassword)) {
+    return "Password must include at least one uppercase letter.";
+  }
+  if (!/\d/.test(rawPassword)) {
+    return "Password must include at least one number.";
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};:'"|,.<>?/~`]/.test(rawPassword)) {
+    return "Password must include at least one special character (!@#$%^&* etc.).";
+  }
+
+  // Common weak passwords check
+  const commonPasswords = [
+    "password123",
+    "password1234",
+    "password12345",
+    "12345678",
+    "123456789",
+    "qwerty123",
+    "qwertyuiop",
+    "admin123",
+    "letmein123",
+    "welcome123",
+    "monkey123",
+    "1234567890",
+    "abcdefgh",
+    "abc12345",
+    "password1",
+    "passw0rd",
+    "p@ssw0rd",
+    "P@ssw0rd",
+    "Password123",
+    "Password123!",
+    "Admin@123",
+    "admin@123",
+  ];
+  if (commonPasswords.includes(rawPassword.toLowerCase())) {
+    return "Password is too common or weak. Please choose a stronger password.";
+  }
+
   if (rawPassword !== rawConfirm) return "Passwords do not match.";
   return null;
 }
@@ -506,6 +592,8 @@ function validateRequest(req) {
   return { valid: true };
 }
 
+
+
 function resolveStaticPath(pathname) {
   const routes = {
     "/": "index.html",
@@ -538,8 +626,10 @@ function resolveStaticPath(pathname) {
   const rel = path.relative(ROOT, filePath);
   if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
 
+  // ── Arbitrary File Disclosure Prevention ──────────────────────────────────
   const fileName = path.basename(filePath);
 
+  // 1. Block hidden files and sensitive directories
   if (
     fileName.startsWith(".") ||
     rel.startsWith("data" + path.sep) ||
@@ -549,6 +639,7 @@ function resolveStaticPath(pathname) {
     return null;
   }
 
+  // 2. Block specific sensitive root files
   const sensitiveFiles = [
     "server.js",
     "firebase.js",
@@ -560,10 +651,12 @@ function resolveStaticPath(pathname) {
     return null;
   }
 
+  // 3. Extension whitelist (only serve files with known mime types)
   const ext = path.extname(filePath);
   if (!mimeTypes[ext]) {
     return null;
   }
+  // ──────────────────────────────────────────────────────────────────────────
 
   return filePath;
 }
@@ -605,7 +698,6 @@ const server = http.createServer(async (req, res) => {
         error: requestValidation.message,
       });
     }
-
     if (pathname.startsWith("/api/")) {
       const routeResult = setupApiRoutes(req, res, pathname);
       if (routeResult !== null) {
@@ -645,6 +737,7 @@ if (process.env.VERCEL !== "1") {
       const port = Number(process.env.PORT || 3000);
       const host = process.env.HOST || "127.0.0.1";
 
+      // ===== CODING PERSONALITY =====
       app.get("/api/user/personality", (req, res) => {
         try {
           const userId = req.user?.id || req.query.userId;
@@ -653,6 +746,7 @@ if (process.env.VERCEL !== "1") {
             return res.status(401).json({ error: "User not authenticated" });
           }
 
+          // Get user data - replace with actual DB fetch
           const userData = {
             problems: [],
             submissions: [],
