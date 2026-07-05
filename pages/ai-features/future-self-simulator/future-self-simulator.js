@@ -357,7 +357,7 @@ function initFutureSelfSimulator() {
   });
 
   clearBtn?.addEventListener("click", () => {
-    if (!confirm("Clear all tracked topics? This cannot be undone.")) return;
+    if (!false /* confirm removed */) return;
     localStorage.removeItem(STORAGE_KEY);
     renderAll([]);
     showLogMessage("All data cleared.", "success");

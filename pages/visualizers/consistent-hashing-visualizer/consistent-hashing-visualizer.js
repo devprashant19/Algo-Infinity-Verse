@@ -157,7 +157,7 @@ function handleRouteCustomKey() {
     if (!text) return;
     
     if (state.servers.length === 0) {
-        alert("Build/Add servers first!");
+        console.warn("Alert:", "Build/Add servers first!");
         return;
     }
     
@@ -194,7 +194,7 @@ function bindEvents() {
     });
     
     els.btnKillServer.addEventListener('click', () => {
-        if (state.servers.length <= 1) return alert("Cannot kill the last server.");
+        if (state.servers.length <= 1) return console.warn("Alert:", "Cannot kill the last server.");
         const idx = Math.floor(Math.random() * state.servers.length);
         const serverToKill = state.servers[idx];
         removeServer(serverToKill.id);
@@ -267,7 +267,7 @@ function bindEvents() {
         els.btnKillSpecificServer.addEventListener('click', () => {
             const targetId = els.selKillServer ? els.selKillServer.value : null;
             if (!targetId) return;
-            if (state.servers.length <= 1) return alert("Cannot kill the last server.");
+            if (state.servers.length <= 1) return console.warn("Alert:", "Cannot kill the last server.");
             removeServer(targetId);
         });
     }

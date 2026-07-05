@@ -160,7 +160,7 @@ function createWorkerBlob() {
 
 async function startMapReduceJob() {
     const rawText = els.dataInput.value.trim();
-    if (!rawText) return alert("Please enter or generate some data first.");
+    if (!rawText) return console.warn("Alert:", "Please enter or generate some data first.");
 
     // Lock UI
     els.btnStartJob.disabled = true;

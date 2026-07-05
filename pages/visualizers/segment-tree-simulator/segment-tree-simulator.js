@@ -641,7 +641,7 @@ function stDoBuild() {
 
 /* ─── Query ─── */
 function stDoQuery() {
-  if (!stState.built) { alert('Build the tree first.'); return; }
+  if (!stState.built) { console.warn("Alert:", 'Build the tree first.'); return; }
   stPause();
 
   var lEl = document.getElementById('stQueryL');
@@ -680,7 +680,7 @@ function stDoQuery() {
 
 /* ─── Update ─── */
 function stDoUpdate() {
-  if (!stState.built) { alert('Build the tree first.'); return; }
+  if (!stState.built) { console.warn("Alert:", 'Build the tree first.'); return; }
   stPause();
 
   var idxEl = document.getElementById('stUpdateIdx');
@@ -729,12 +729,12 @@ function stPromptUpdate(idx) {
   if (idx < 0 || idx >= n) return;
   
   var currentVal = stState.arr[idx];
-  var inputVal = prompt('Enter new value for index ' + idx + ' (current value: ' + currentVal + '):', currentVal);
+  var inputVal = null /* prompt removed */:', currentVal);
   if (inputVal === null) return;
   
   var val = parseInt(inputVal.trim());
   if (isNaN(val)) {
-    alert('Please enter a valid integer.');
+    console.warn("Alert:", 'Please enter a valid integer.');
     return;
   }
   

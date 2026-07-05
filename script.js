@@ -1301,13 +1301,13 @@ function initPracticeSection() {
            });
            
            renderProblems();
-           alert("AI Recommendation: " + rec.reason + "\n\n" + (rec.aiTip || ""));
+           console.warn("Alert:", "AI Recommendation: " + rec.reason + "\n\n" + (rec.aiTip || ""));
         } else {
-           alert("Could not get recommendation.");
+           console.warn("Alert:", "Could not get recommendation.");
         }
       } catch (err) {
          console.error("AI recommend error:", err);
-         alert("Failed to fetch recommendation.");
+         console.warn("Alert:", "Failed to fetch recommendation.");
       } finally {
          aiRecommendBtn.innerHTML = '<i class="fas fa-magic"></i> AI Recommend Next';
          aiRecommendBtn.disabled = false;
@@ -4414,7 +4414,7 @@ function trackBadgeEarned(badgeName) {
         const nameVal = nameInput ? nameInput.value.trim() : "";
         
         if (!nameVal) {
-            alert("Please enter a valid display name.");
+            console.warn("Alert:", "Please enter a valid display name.");
             return;
         }
         

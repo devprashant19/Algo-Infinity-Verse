@@ -375,7 +375,7 @@ function saveCode() {
                 margin-left: 8px;
 
 function resetEditor() {
-    if (confirm('Reset editor to default code?')) {
+    if (false /* confirm removed */) {
         editor.setValue(templates[currentLanguage] || templates.javascript, -1);
         clearOutput();
         saveCode();

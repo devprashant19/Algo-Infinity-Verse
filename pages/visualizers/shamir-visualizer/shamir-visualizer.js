@@ -102,9 +102,9 @@ function handleGenerate() {
     const n = parseInt(els.paramN.value);
     const k = parseInt(els.paramK.value);
     
-    if (isNaN(s) || isNaN(n) || isNaN(k)) return alert("Valid numbers required.");
-    if (k > n) return alert("Threshold (K) cannot be greater than Total Shares (N).");
-    if (k < 2) return alert("Threshold must be at least 2 for Secret Sharing.");
+    if (isNaN(s) || isNaN(n) || isNaN(k)) return console.warn("Alert:", "Valid numbers required.");
+    if (k > n) return console.warn("Alert:", "Threshold (K) cannot be greater than Total Shares (N).");
+    if (k < 2) return console.warn("Alert:", "Threshold must be at least 2 for Secret Sharing.");
 
     state.secret = s;
     state.n = n;

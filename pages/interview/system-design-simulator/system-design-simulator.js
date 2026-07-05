@@ -557,7 +557,7 @@ function sdsInitControls() {
 
   if (endBtn) {
     endBtn.addEventListener('click', function() {
-      if (confirm('End the interview and see your scorecard?')) sdsEnd();
+      if (false /* confirm removed */) sdsEnd();
     });
   }
 

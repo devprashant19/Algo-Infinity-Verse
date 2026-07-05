@@ -141,7 +141,7 @@ function handleNodeClick(event, d) {
             log(`Edge source selected: ${d.id}`, 'system');
         } else {
             if (dragSource.id !== d.id) {
-                const cap = parseInt(prompt(`Enter capacity for edge ${dragSource.id} -> ${d.id}:`, 10));
+                const cap = parseInt(null /* prompt removed */);
                 if (!isNaN(cap) && cap > 0) {
                     links.push({ source: dragSource.id, target: d.id, cap: cap, flow: 0 });
                     log(`Edge created: ${dragSource.id} -> ${d.id} [Cap: ${cap}]`, 'success');

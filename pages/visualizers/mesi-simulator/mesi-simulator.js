@@ -81,7 +81,7 @@ function bindEvents() {
         
         // Validate Hex
         if (!/^[0-9A-F]{1,2}$/.test(data)) {
-            return alert("Please enter valid 1 or 2 digit Hex data (e.g. FF).");
+            return console.warn("Alert:", "Please enter valid 1 or 2 digit Hex data (e.g. FF).");
         }
         if (data.length === 1) data = "0" + data; // Pad to 2 chars
 

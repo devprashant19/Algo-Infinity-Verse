@@ -278,7 +278,7 @@ function checkCompileStatus() {
 // ==========================================
 function compileGraph() {
     if (!state.gpuDevice) {
-        alert("WebGPU device not initialized. Cannot compile.");
+        console.warn("Alert:", "WebGPU device not initialized. Cannot compile.");
         return;
     }
 

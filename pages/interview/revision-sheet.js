@@ -211,10 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
     copyBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(generatePlainText());
-        alert('Revision sheet copied to clipboard!');
+        console.warn("Alert:", 'Revision sheet copied to clipboard!');
       } catch (e) {
         console.error('Clipboard error', e);
-        alert('Unable to copy to clipboard.');
+        console.warn("Alert:", 'Unable to copy to clipboard.');
       }
     });
   }
