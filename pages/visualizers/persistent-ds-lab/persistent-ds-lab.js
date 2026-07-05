@@ -2,17 +2,17 @@ document.addEventListener('DOMContentLoaded', function() {
   pdInit();
 });
 
-var PD_NS = 'http://www.w3.org/2000/svg';
-var pdNodePool = [];   
-var pdVersions = [];   
-var pdCurrentVer = 0;
-var pdCompareA = null;
-var pdCompareB = null;
-var pdNaiveTotal = 0;  
+let PD_NS = 'http://www.w3.org/2000/svg';
+let pdNodePool = [];   
+let pdVersions = [];   
+let pdCurrentVer = 0;
+let pdCompareA = null;
+let pdCompareB = null;
+let pdNaiveTotal = 0;  
 
 /* ─── Create a new node ─── */
 function pdNewNode(value, left, right) {
-  var id = pdNodePool.length;
+  let id = pdNodePool.length;
   pdNodePool.push({ id: id, value: value, left: left, right: right });
   return id;
 }
@@ -20,21 +20,21 @@ function pdNewNode(value, left, right) {
 /* ─── Count nodes reachable from root ─── */
 function pdCountNodes(rootId) {
   if (rootId === null) return 0;
-  var node = pdNodePool[rootId];
+  let node = pdNodePool[rootId];
   return 1 + pdCountNodes(node.left) + pdCountNodes(node.right);
 }
 
 /* ─── Persistent BST insert — returns new root id ─── */
 function pdInsert(rootId, value) {
   if (rootId === null) return pdNewNode(value, null, null);
-  var node = pdNodePool[rootId];
+  let node = pdNodePool[rootId];
   if (value === node.value) return rootId; // duplicate — no change, share same root
   if (value < node.value) {
-    var newLeft = pdInsert(node.left, value);
+    let newLeft = pdInsert(node.left, value);
     if (newLeft === node.left) return rootId; // nothing changed
     return pdNewNode(node.value, newLeft, node.right); // path copy
   } else {
-    var newRight = pdInsert(node.right, value);
+    let newRight = pdInsert(node.right, value);
     if (newRight === node.right) return rootId;
     return pdNewNode(node.value, node.left, newRight); // path copy
   }
@@ -42,7 +42,7 @@ function pdInsert(rootId, value) {
 
 /* ─── Find in-order successor ─── */
 function pdMinNode(rootId) {
-  var node = pdNodePool[rootId];
+  let node = pdNodePool[rootId];
   while (node.left !== null) node = pdNodePool[node.left];
   return node;
 }
@@ -50,13 +50,13 @@ function pdMinNode(rootId) {
 /* ─── Persistent BST delete — returns new root id ─── */
 function pdDelete(rootId, value) {
   if (rootId === null) return null;
-  var node = pdNodePool[rootId];
+  let node = pdNodePool[rootId];
   if (value < node.value) {
-    var newLeft = pdDelete(node.left, value);
+    let newLeft = pdDelete(node.left, value);
     if (newLeft === node.left) return rootId;
     return pdNewNode(node.value, newLeft, node.right);
   } else if (value > node.value) {
-    var newRight = pdDelete(node.right, value);
+    let newRight = pdDelete(node.right, value);
     if (newRight === node.right) return rootId;
     return pdNewNode(node.value, node.left, newRight);
   } else {
@@ -64,16 +64,16 @@ function pdDelete(rootId, value) {
     if (node.left === null) return node.right;
     if (node.right === null) return node.left;
     // Two children: replace with in-order successor
-    var succ = pdMinNode(node.right);
-    var newRight2 = pdDelete(node.right, succ.value);
+    let succ = pdMinNode(node.right);
+    let newRight2 = pdDelete(node.right, succ.value);
     return pdNewNode(succ.value, node.left, newRight2);
   }
 }
 
 /* ─── Execute operation ─── */
 function pdExecuteOp(opType, value) {
-  var curRoot = pdVersions[pdCurrentVer].root;
-  var newRoot;
+  let curRoot = pdVersions[pdCurrentVer].root;
+  let newRoot;
   if (opType === 'insert') {
     newRoot = pdInsert(curRoot, value);
   } else {
@@ -81,15 +81,15 @@ function pdExecuteOp(opType, value) {
   }
 
   if (newRoot === curRoot) {
-    var reason = opType === 'delete'
+    let reason = opType === 'delete'
       ? 'not found in v' + pdCurrentVer
       : 'already present in v' + pdCurrentVer;
     pdSetStatus('Value ' + value + ' ' + reason + ' — no new version created.', '');
     return;
   }
 
-  var vIdx = pdVersions.length;
-  var opLabel = (opType === 'insert' ? 'insert' : 'delete') + '(' + value + ')';
+  let vIdx = pdVersions.length;
+  let opLabel = (opType === 'insert' ? 'insert' : 'delete') + '(' + value + ')';
   pdVersions.push({ root: newRoot, label: 'v' + vIdx, op: opLabel });
   pdNaiveTotal += pdCountNodes(newRoot);
   pdCurrentVer = vIdx;
@@ -106,20 +106,20 @@ function pdExecuteOp(opType, value) {
 function pdCollectNodes(rootId, result) {
   if (rootId === null) return;
   result[rootId] = true;
-  var node = pdNodePool[rootId];
+  let node = pdNodePool[rootId];
   pdCollectNodes(node.left, result);
   pdCollectNodes(node.right, result);
 }
 
 /* ─── Layout: compute x/y positions using in-order traversal ─── */
 function pdLayout(rootId) {
-  var positions = {};
-  var counter = { val: 0 };
-  var depths = {};
+  let positions = {};
+  let counter = { val: 0 };
+  let depths = {};
 
   function dfs(nodeId, depth) {
     if (nodeId === null) return;
-    var node = pdNodePool[nodeId];
+    let node = pdNodePool[nodeId];
     dfs(node.left, depth + 1);
     positions[nodeId] = { x: counter.val * 52 + 30, y: depth * 70 + 40 };
     depths[nodeId] = depth;
@@ -133,7 +133,7 @@ function pdLayout(rootId) {
 
 /* ─── Render tree onto SVG ─── */
 function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
-  var svg = document.getElementById('pdSvg');
+  let svg = document.getElementById('pdSvg');
   if (!svg) return;
   while (svg.firstChild) svg.removeChild(svg.firstChild);
 
@@ -142,13 +142,13 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
     return;
   }
 
-  var ver = pdVersions[versionIdx];
+  let ver = pdVersions[versionIdx];
   pdSetCanvasTitle(ver.label + (ver.op ? ' ← ' + ver.op : ' — root'));
 
   if (ver.root === null) {
     svg.setAttribute('viewBox', '0 0 300 100');
     svg.setAttribute('width', 300); svg.setAttribute('height', 100);
-    var t = document.createElementNS(PD_NS, 'text');
+    let t = document.createElementNS(PD_NS, 'text');
     t.setAttribute('x', 150); t.setAttribute('y', 50); t.setAttribute('text-anchor', 'middle');
     t.setAttribute('fill', 'rgba(148,163,184,0.35)'); t.setAttribute('font-size', '14'); t.setAttribute('font-family', 'Poppins,sans-serif');
     t.textContent = 'Empty tree';
@@ -156,47 +156,47 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
     return;
   }
 
-  var positions = pdLayout(ver.root);
+  let positions = pdLayout(ver.root);
 
   // Determine node coloring
-  var verANodes = {}; var verBNodes = {};
+  let verANodes = {}; let verBNodes = {};
   if (compareAIdx !== null && pdVersions[compareAIdx]) pdCollectNodes(pdVersions[compareAIdx].root, verANodes);
   if (compareBIdx !== null && pdVersions[compareBIdx]) pdCollectNodes(pdVersions[compareBIdx].root, verBNodes);
 
   // Newly created nodes: node IDs that appear in this version but not in previous version
-  var prevNodes = {};
+  let prevNodes = {};
   if (versionIdx > 0 && pdVersions[versionIdx - 1]) {
     pdCollectNodes(pdVersions[versionIdx - 1].root, prevNodes);
   }
 
   // Compute SVG size
-  var xs = Object.values(positions).map(function(p){return p.x;});
-  var ys = Object.values(positions).map(function(p){return p.y;});
-  var W = Math.max.apply(null, xs.concat([0])) + 60;
-  var H = Math.max.apply(null, ys.concat([0])) + 60;
+  let xs = Object.values(positions).map(function(p){return p.x;});
+  let ys = Object.values(positions).map(function(p){return p.y;});
+  let W = Math.max.apply(null, xs.concat([0])) + 60;
+  let H = Math.max.apply(null, ys.concat([0])) + 60;
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
   svg.setAttribute('width', W); svg.setAttribute('height', H);
 
   // Arrow marker
-  var defs = document.createElementNS(PD_NS, 'defs');
-  var marker = document.createElementNS(PD_NS, 'marker');
+  let defs = document.createElementNS(PD_NS, 'defs');
+  let marker = document.createElementNS(PD_NS, 'marker');
   marker.setAttribute('id', 'pdArrow');
   marker.setAttribute('viewBox', '0 0 8 8'); marker.setAttribute('refX', '7'); marker.setAttribute('refY', '4');
   marker.setAttribute('markerWidth', '4'); marker.setAttribute('markerHeight', '4'); marker.setAttribute('orient', 'auto');
-  var mp = document.createElementNS(PD_NS, 'path');
+  let mp = document.createElementNS(PD_NS, 'path');
   mp.setAttribute('d', 'M0,0 L8,4 L0,8 z'); mp.setAttribute('fill', 'rgba(148,163,184,0.4)');
   marker.appendChild(mp); defs.appendChild(marker); svg.appendChild(defs);
 
   // Draw edges
   Object.keys(positions).forEach(function(nodeIdStr) {
-    var nodeId = parseInt(nodeIdStr);
-    var node = pdNodePool[nodeId];
-    var pos = positions[nodeId];
+    let nodeId = parseInt(nodeIdStr);
+    let node = pdNodePool[nodeId];
+    let pos = positions[nodeId];
 
     [node.left, node.right].forEach(function(childId) {
       if (childId === null || !positions[childId]) return;
-      var cpos = positions[childId];
-      var line = document.createElementNS(PD_NS, 'line');
+      let cpos = positions[childId];
+      let line = document.createElementNS(PD_NS, 'line');
       line.setAttribute('x1', pos.x); line.setAttribute('y1', pos.y + 15);
       line.setAttribute('x2', cpos.x); line.setAttribute('y2', cpos.y - 15);
       line.setAttribute('stroke', 'rgba(148,163,184,0.25)');
@@ -208,26 +208,26 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
 
   // Draw nodes
   Object.keys(positions).forEach(function(nodeIdStr) {
-    var nodeId = parseInt(nodeIdStr);
-    var node = pdNodePool[nodeId];
-    var pos = positions[nodeId];
+    let nodeId = parseInt(nodeIdStr);
+    let node = pdNodePool[nodeId];
+    let pos = positions[nodeId];
 
-    var isNew   = !prevNodes[nodeId] && versionIdx > 0;
-    var inA     = verANodes[nodeId];
-    var inB     = verBNodes[nodeId];
-    var inBoth  = inA && inB;
-    var comparing = compareAIdx !== null && compareBIdx !== null;
+    let isNew   = !prevNodes[nodeId] && versionIdx > 0;
+    let inA     = verANodes[nodeId];
+    let inB     = verBNodes[nodeId];
+    let inBoth  = inA && inB;
+    let comparing = compareAIdx !== null && compareBIdx !== null;
 
-    var fillColor, strokeColor;
+    let fillColor, strokeColor;
     if (comparing && inBoth)       { fillColor = 'rgba(239,68,68,0.3)';  strokeColor = '#ef4444'; }
     else if (comparing && inA)     { fillColor = 'rgba(168,85,247,0.3)'; strokeColor = '#a855f7'; }
     else if (comparing && inB)     { fillColor = 'rgba(245,158,11,0.3)'; strokeColor = '#f59e0b'; }
     else if (isNew)                { fillColor = 'rgba(34,197,94,0.3)';  strokeColor = '#22c55e'; }
     else                           { fillColor = 'rgba(6,182,212,0.18)'; strokeColor = '#06b6d4'; }
 
-    var g = document.createElementNS(PD_NS, 'g');
+    let g = document.createElementNS(PD_NS, 'g');
 
-    var circle = document.createElementNS(PD_NS, 'circle');
+    let circle = document.createElementNS(PD_NS, 'circle');
     circle.setAttribute('class', 'pd-node-circle');
     circle.setAttribute('cx', pos.x); circle.setAttribute('cy', pos.y); circle.setAttribute('r', '15');
     circle.setAttribute('fill', fillColor);
@@ -242,7 +242,7 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
     });
     g.appendChild(circle);
 
-    var label = document.createElementNS(PD_NS, 'text');
+    let label = document.createElementNS(PD_NS, 'text');
     label.setAttribute('class', 'pd-node-label');
     label.setAttribute('x', pos.x); label.setAttribute('y', pos.y + 4);
     label.setAttribute('text-anchor', 'middle');
@@ -251,7 +251,7 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
     g.appendChild(label);
 
     // Node ID (small, below)
-    var idLabel = document.createElementNS(PD_NS, 'text');
+    let idLabel = document.createElementNS(PD_NS, 'text');
     idLabel.setAttribute('x', pos.x); idLabel.setAttribute('y', pos.y + 26);
     idLabel.setAttribute('text-anchor', 'middle');
     idLabel.setAttribute('font-size', '8'); idLabel.setAttribute('fill', 'rgba(148,163,184,0.35)');
@@ -265,13 +265,13 @@ function pdRenderTree(versionIdx, compareAIdx, compareBIdx) {
 
 /* ─── Inspect node ─── */
 function pdInspectNode(nodeId, versionIdx) {
-  var node = pdNodePool[nodeId];
-  var inspector = document.getElementById('pdInspector');
+  let node = pdNodePool[nodeId];
+  let inspector = document.getElementById('pdInspector');
   if (!inspector) return;
 
   // Count how many versions reference this node
-  var refCount = pdVersions.filter(function(v) {
-    var nodes = {};
+  let refCount = pdVersions.filter(function(v) {
+    let nodes = {};
     pdCollectNodes(v.root, nodes);
     return nodes[nodeId];
   }).length;
@@ -282,7 +282,7 @@ function pdInspectNode(nodeId, versionIdx) {
     { k: 'Left child', v: node.left !== null ? '#' + node.left + ' (' + pdNodePool[node.left].value + ')' : 'null' },
     { k: 'Right child',v: node.right !== null ? '#' + node.right + ' (' + pdNodePool[node.right].value + ')' : 'null' },
     { k: 'Referenced by', v: refCount + ' version(s)' },
-    { k: 'Created in', v: 'v' + pdVersions.findIndex(function(v){ var n = {}; pdCollectNodes(v.root, n); return n[nodeId]; }) },
+    { k: 'Created in', v: 'v' + pdVersions.findIndex(function(v){ let n = {}; pdCollectNodes(v.root, n); return n[nodeId]; }) },
   ].map(function(r) {
     return '<div class="pd-insp-row"><span class="pd-insp-key">' + r.k + '</span><span class="pd-insp-val">' + r.v + '</span></div>';
   }).join('');
@@ -290,7 +290,7 @@ function pdInspectNode(nodeId, versionIdx) {
 
 /* ─── Version timeline ─── */
 function pdUpdateVersionTimeline() {
-  var timeline = document.getElementById('pdTimeline');
+  let timeline = document.getElementById('pdTimeline');
   if (!timeline) return;
   timeline.innerHTML = pdVersions.map(function(ver, i) {
     return '<div class="pd-version-item' + (i === pdCurrentVer ? ' active' : '') + '" data-ver="' + i + '">' +
@@ -314,9 +314,9 @@ function pdUpdateVersionTimeline() {
 /* ─── Compare dropdowns ─── */
 function pdUpdateCompareDropdowns() {
   ['pdCompareA', 'pdCompareB'].forEach(function(id) {
-    var sel = document.getElementById(id);
+    let sel = document.getElementById(id);
     if (!sel) return;
-    var curVal = sel.value;
+    let curVal = sel.value;
     sel.innerHTML = '<option value="">—</option>' + pdVersions.map(function(ver, i) {
       return '<option value="' + i + '">' + ver.label + (ver.op ? ' (' + ver.op + ')' : '') + '</option>';
     }).join('');
@@ -326,16 +326,16 @@ function pdUpdateCompareDropdowns() {
 
 /* ─── Memory stats ─── */
 function pdUpdateMemoryStats() {
-  var unique = pdNodePool.length;
-  var naive  = pdNaiveTotal;
-  var saved  = Math.max(0, naive - unique);
-  var pct    = naive > 0 ? Math.round((unique / naive) * 100) : 100;
+  let unique = pdNodePool.length;
+  let naive  = pdNaiveTotal;
+  let saved  = Math.max(0, naive - unique);
+  let pct    = naive > 0 ? Math.round((unique / naive) * 100) : 100;
 
-  var uel = document.getElementById('pdUniqueNodes');
-  var nel = document.getElementById('pdNaiveNodes');
-  var sel = document.getElementById('pdSavedNodes');
-  var bel = document.getElementById('pdMemBarFill');
-  var pel = document.getElementById('pdMemPct');
+  let uel = document.getElementById('pdUniqueNodes');
+  let nel = document.getElementById('pdNaiveNodes');
+  let sel = document.getElementById('pdSavedNodes');
+  let bel = document.getElementById('pdMemBarFill');
+  let pel = document.getElementById('pdMemPct');
 
   if (uel) uel.textContent = unique;
   if (nel) nel.textContent = naive;
@@ -346,21 +346,21 @@ function pdUpdateMemoryStats() {
 
 /* ─── Helpers ─── */
 function pdSetStatus(msg, cls) {
-  var el = document.getElementById('pdStatus');
+  let el = document.getElementById('pdStatus');
   if (el) el.textContent = msg;
 }
 
 function pdSetCanvasTitle(title) {
-  var el = document.getElementById('pdCanvasTitle');
+  let el = document.getElementById('pdCanvasTitle');
   if (el) el.textContent = title;
 }
 
 function pdAddLog(type, msg) {
-  var log = document.getElementById('pdOpLog');
+  let log = document.getElementById('pdOpLog');
   if (!log) return;
-  var empty = log.querySelector('.pd-log-empty');
+  let empty = log.querySelector('.pd-log-empty');
   if (empty) empty.remove();
-  var entry = document.createElement('div');
+  let entry = document.createElement('div');
   entry.className = 'pd-log-entry ' + type;
   entry.textContent = msg;
   log.insertBefore(entry, log.firstChild);
@@ -376,20 +376,20 @@ function pdLoadPreset(seq) {
   pdCompareA = null; pdCompareB = null;
   pdNaiveTotal = 0;
 
-  var log = document.getElementById('pdOpLog');
+  let log = document.getElementById('pdOpLog');
   if (log) log.innerHTML = '<div class="pd-log-empty">No operations yet.</div>';
 
-  var inspector = document.getElementById('pdInspector');
+  let inspector = document.getElementById('pdInspector');
   if (inspector) inspector.innerHTML = '<div class="pd-inspector-empty">Click any node to inspect it</div>';
 
-  var timeline = document.getElementById('pdTimeline');
+  let timeline = document.getElementById('pdTimeline');
   if (timeline) timeline.innerHTML = '';
 
   seq.forEach(function(val) {
-    var curRoot = pdVersions[pdCurrentVer].root;
-    var newRoot = pdInsert(curRoot, val);
+    let curRoot = pdVersions[pdCurrentVer].root;
+    let newRoot = pdInsert(curRoot, val);
     if (newRoot !== curRoot) {
-      var vIdx = pdVersions.length;
+      let vIdx = pdVersions.length;
       pdVersions.push({ root: newRoot, label: 'v' + vIdx, op: 'insert(' + val + ')' });
       pdNaiveTotal += pdCountNodes(newRoot);
       pdCurrentVer = vIdx;
@@ -417,23 +417,23 @@ function pdInit() {
   pdRenderTree(0, null, null);
 
   // Operation button
-  var opBtn = document.getElementById('pdOpBtn');
+  let opBtn = document.getElementById('pdOpBtn');
   if (opBtn) {
     opBtn.addEventListener('click', function() {
-      var opType = document.getElementById('pdOpType').value;
-      var val = parseInt(document.getElementById('pdOpValue').value);
+      let opType = document.getElementById('pdOpType').value;
+      let val = parseInt(document.getElementById('pdOpValue').value);
       if (isNaN(val) || val < 1 || val > 99) { pdSetStatus('Enter a value between 1 and 99.', ''); return; }
       pdExecuteOp(opType, val);
     });
   }
 
   // Value input enter key
-  var valInput = document.getElementById('pdOpValue');
+  let valInput = document.getElementById('pdOpValue');
   if (valInput) {
     valInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
-        var opType = document.getElementById('pdOpType').value;
-        var val = parseInt(valInput.value);
+        let opType = document.getElementById('pdOpType').value;
+        let val = parseInt(valInput.value);
         if (!isNaN(val) && val >= 1 && val <= 99) pdExecuteOp(opType, val);
       }
     });
@@ -442,17 +442,17 @@ function pdInit() {
   // Presets
   document.querySelectorAll('.pd-preset-chip').forEach(function(chip) {
     chip.addEventListener('click', function() {
-      var seq = JSON.parse(chip.getAttribute('data-seq'));
+      let seq = JSON.parse(chip.getAttribute('data-seq'));
       pdLoadPreset(seq);
     });
   });
 
   // Compare button
-  var compareBtn = document.getElementById('pdCompareBtn');
+  let compareBtn = document.getElementById('pdCompareBtn');
   if (compareBtn) {
     compareBtn.addEventListener('click', function() {
-      var selA = document.getElementById('pdCompareA');
-      var selB = document.getElementById('pdCompareB');
+      let selA = document.getElementById('pdCompareA');
+      let selB = document.getElementById('pdCompareB');
       if (!selA || !selB || selA.value === '' || selB.value === '' || selA.value === selB.value) {
         pdSetStatus('Select two different versions to compare.', '');
         return;
@@ -461,10 +461,10 @@ function pdInit() {
       pdCompareB = parseInt(selB.value);
 
       // Count shared nodes
-      var nodesA = {}; var nodesB = {};
+      let nodesA = {}; let nodesB = {};
       pdCollectNodes(pdVersions[pdCompareA].root, nodesA);
       pdCollectNodes(pdVersions[pdCompareB].root, nodesB);
-      var shared = Object.keys(nodesA).filter(function(k){ return nodesB[k]; }).length;
+      let shared = Object.keys(nodesA).filter(function(k){ return nodesB[k]; }).length;
 
       pdRenderTree(pdCurrentVer, pdCompareA, pdCompareB);
       pdSetStatus(
@@ -477,12 +477,12 @@ function pdInit() {
   }
 
   // Clear compare
-  var clearBtn = document.getElementById('pdCompareClearBtn');
+  let clearBtn = document.getElementById('pdCompareClearBtn');
   if (clearBtn) {
     clearBtn.addEventListener('click', function() {
       pdCompareA = null; pdCompareB = null;
-      var selA = document.getElementById('pdCompareA');
-      var selB = document.getElementById('pdCompareB');
+      let selA = document.getElementById('pdCompareA');
+      let selB = document.getElementById('pdCompareB');
       if (selA) selA.value = '';
       if (selB) selB.value = '';
       pdRenderTree(pdCurrentVer, null, null);

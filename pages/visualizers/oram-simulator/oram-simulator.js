@@ -3,24 +3,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* ─── Constants ─── */
-var OR_LEVELS       = 3;
-var OR_N_LEAVES     = 8;
-var OR_TOTAL_NODES  = 2 * OR_N_LEAVES - 1;
-var OR_LEAF_START   = OR_N_LEAVES;
-var OR_BUCKET_CAP   = 4;
-var OR_N_BLOCKS     = 8;
+let OR_LEVELS       = 3;
+let OR_N_LEAVES     = 8;
+let OR_TOTAL_NODES  = 2 * OR_N_LEAVES - 1;
+let OR_LEAF_START   = OR_N_LEAVES;
+let OR_BUCKET_CAP   = 4;
+let OR_N_BLOCKS     = 8;
 
-var OR_BLOCK_NAMES = ['Medical', 'Finance', 'Messages', 'Location', 'Contacts', 'Photos', 'Calendar', 'Passwords'];
-var OR_BLOCK_EMOJI = ['🏥','💰','✉️','📍','👤','📷','📅','🔑'];
+let OR_BLOCK_NAMES = ['Medical', 'Finance', 'Messages', 'Location', 'Contacts', 'Photos', 'Calendar', 'Passwords'];
+let OR_BLOCK_EMOJI = ['🏥','💰','✉️','📍','👤','📷','📅','🔑'];
 
 /* ─── Part 1: Naive state ─── */
-var orNaiveState = {
+let orNaiveState = {
   accessed    : {},
   logCount    : 0,
 };
 
 /* ─── Part 2: ORAM state ─── */
-var orOramState = {
+let orOramState = {
   posMap      : {},   // blockId → leafIdx (0..N_LEAVES-1)
   stash       : [],   // [{blockId, data, leaf}]
   buckets     : {},   // nodeIdx → [{blockId, data, leaf}]
@@ -35,8 +35,8 @@ var orOramState = {
 function orRandInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
 function orPathToLeaf(leafIdx) {
-  var nodeIdx = OR_LEAF_START + leafIdx;
-  var path    = [];
+  let nodeIdx = OR_LEAF_START + leafIdx;
+  let path    = [];
   while (nodeIdx >= 1) { path.push(nodeIdx); nodeIdx = Math.floor(nodeIdx / 2); }
   return path;
 }
@@ -52,17 +52,17 @@ function orInitOram() {
   orOramState.targetBlock = null;
   orOramState.animating   = false;
 
-  for (var i = 1; i <= OR_TOTAL_NODES; i++) orOramState.buckets[i] = [];
+  for (let i = 1; i <= OR_TOTAL_NODES; i++) orOramState.buckets[i] = [];
 
-  for (var b = 0; b < OR_N_BLOCKS; b++) {
-    var leaf = orRandInt(0, OR_N_LEAVES - 1);
+  for (let b = 0; b < OR_N_BLOCKS; b++) {
+    let leaf = orRandInt(0, OR_N_LEAVES - 1);
     orOramState.posMap[b] = leaf;
 
-    var path    = orPathToLeaf(leaf);
-    var placed  = false;
+    let path    = orPathToLeaf(leaf);
+    let placed  = false;
 
-    for (var pi = 0; pi < path.length && !placed; pi++) {
-      var nodeIdx = path[pi];
+    for (let pi = 0; pi < path.length && !placed; pi++) {
+      let nodeIdx = path[pi];
       if (orOramState.buckets[nodeIdx].length < OR_BUCKET_CAP) {
         orOramState.buckets[nodeIdx].push({ blockId: b, leaf: leaf });
         placed = true;
@@ -75,12 +75,12 @@ function orInitOram() {
 
 /* ─── Part 1: Naive render ─── */
 function orRenderNaive() {
-  var container = document.getElementById('orNaiveBlocks');
+  let container = document.getElementById('orNaiveBlocks');
   if (!container) return;
 
   container.innerHTML = '';
-  for (var i = 0; i < OR_N_BLOCKS; i++) {
-    var div = document.createElement('div');
+  for (let i = 0; i < OR_N_BLOCKS; i++) {
+    let div = document.createElement('div');
     div.className = 'or-naive-block' + (orNaiveState.accessed[i] ? ' accessed' : '');
     div.setAttribute('data-block', i);
     div.innerHTML =
@@ -97,21 +97,21 @@ function orNaiveAccess(blockId) {
   orNaiveState.logCount++;
   orRenderNaive();
 
-  var addr    = '0x' + (blockId * 64).toString(16).padStart(4,'0');
-  var log     = document.getElementById('orNaiveAdvLog');
-  var empty   = log ? log.querySelector('.or-adv-empty') : null;
+  let addr    = '0x' + (blockId * 64).toString(16).padStart(4,'0');
+  let log     = document.getElementById('orNaiveAdvLog');
+  let empty   = log ? log.querySelector('.or-adv-empty') : null;
   if (empty) empty.remove();
 
-  var entry = document.createElement('div');
+  let entry = document.createElement('div');
   entry.className = 'or-adv-entry bad';
   entry.textContent = 'Access #' + orNaiveState.logCount + ': READ addr ' + addr + ' → "' + OR_BLOCK_NAMES[blockId] + '" identified!';
   if (log) log.insertBefore(entry, log.firstChild);
 
-  var identified = Object.keys(orNaiveState.accessed).length;
-  var idEl       = document.getElementById('orNaiveIdentified');
+  let identified = Object.keys(orNaiveState.accessed).length;
+  let idEl       = document.getElementById('orNaiveIdentified');
   if (idEl) idEl.textContent = identified + ' / ' + OR_N_BLOCKS;
 
-  var verdict = document.getElementById('orNaiveVerdict');
+  let verdict = document.getElementById('orNaiveVerdict');
   if (verdict) {
     verdict.textContent = identified >= OR_N_BLOCKS
       ? '💀 All ' + OR_N_BLOCKS + ' blocks identified!'
@@ -121,12 +121,12 @@ function orNaiveAccess(blockId) {
 
 /* ─── Part 2: ORAM render ─── */
 function orRenderOramBlocks() {
-  var container = document.getElementById('orOramBlocks');
+  let container = document.getElementById('orOramBlocks');
   if (!container) return;
   container.innerHTML = '';
-  for (var i = 0; i < OR_N_BLOCKS; i++) {
-    var leaf = orOramState.posMap[i];
-    var div  = document.createElement('div');
+  for (let i = 0; i < OR_N_BLOCKS; i++) {
+    let leaf = orOramState.posMap[i];
+    let div  = document.createElement('div');
     div.className = 'or-data-block';
     div.setAttribute('data-block', i);
     div.innerHTML =
@@ -142,12 +142,12 @@ function orRenderOramBlocks() {
 }
 
 function orRenderPosMap(changedId) {
-  var grid = document.getElementById('orPosMapGrid');
+  let grid = document.getElementById('orPosMapGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  for (var i = 0; i < OR_N_BLOCKS; i++) {
-    var leaf = orOramState.posMap[i];
-    var div  = document.createElement('div');
+  for (let i = 0; i < OR_N_BLOCKS; i++) {
+    let leaf = orOramState.posMap[i];
+    let div  = document.createElement('div');
     div.className = 'or-pm-entry' + (i === changedId ? ' changed' : '');
     div.innerHTML = '<span class="or-pm-id">blk#' + i + '</span><span class="or-pm-leaf">L' + leaf + '</span>';
     grid.appendChild(div);
@@ -155,11 +155,11 @@ function orRenderPosMap(changedId) {
 }
 
 function orRenderStash() {
-  var container = document.getElementById('orStashBlocks');
-  var countEl   = document.getElementById('orStashCount');
+  let container = document.getElementById('orStashBlocks');
+  let countEl   = document.getElementById('orStashCount');
   if (!container) return;
 
-  var stash = orOramState.stash;
+  let stash = orOramState.stash;
   if (countEl) countEl.textContent = stash.length + ' block(s)';
 
   if (stash.length === 0) {
@@ -176,42 +176,42 @@ function orRenderStash() {
 }
 
 function orRenderStats() {
-  var accEl     = document.getElementById('orStatAccesses');
-  var stashEl   = document.getElementById('orStatMaxStash');
-  var L         = OR_LEVELS + 1;
-  var overhead  = L;
+  let accEl     = document.getElementById('orStatAccesses');
+  let stashEl   = document.getElementById('orStatMaxStash');
+  let L         = OR_LEVELS + 1;
+  let overhead  = L;
 
   if (accEl)   accEl.textContent  = orOramState.accessCount;
   if (stashEl) stashEl.textContent = orOramState.maxStash;
 
-  var fetchEl   = document.getElementById('orStatFetched');
-  var overEl    = document.getElementById('orStatOverhead');
+  let fetchEl   = document.getElementById('orStatFetched');
+  let overEl    = document.getElementById('orStatOverhead');
   if (fetchEl)  fetchEl.textContent = L + ' buckets';
   if (overEl)   overEl.textContent  = L + '× vs naive';
 }
 
 /* ─── ORAM Tree Canvas ─── */
 function orDrawTree(activePath, targetNode) {
-  var canvas = document.getElementById('orTreeCanvas');
+  let canvas = document.getElementById('orTreeCanvas');
   if (!canvas) return;
 
-  var levels = OR_LEVELS + 1;
-  var W      = 440;
-  var H      = 280;
+  let levels = OR_LEVELS + 1;
+  let W      = 440;
+  let H      = 280;
   canvas.width  = W;
   canvas.height = H;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
-  var nodePos = {};
-  var levelH  = H / (levels + 0.5);
+  let nodePos = {};
+  let levelH  = H / (levels + 0.5);
 
-  for (var lv = 0; lv < levels; lv++) {
-    var nodesAtLevel = Math.pow(2, lv);
-    var firstNode    = Math.pow(2, lv);
-    var cellW        = W / nodesAtLevel;
-    for (var ni = 0; ni < nodesAtLevel; ni++) {
-      var nodeIdx = firstNode + ni;
+  for (let lv = 0; lv < levels; lv++) {
+    let nodesAtLevel = Math.pow(2, lv);
+    let firstNode    = Math.pow(2, lv);
+    let cellW        = W / nodesAtLevel;
+    for (let ni = 0; ni < nodesAtLevel; ni++) {
+      let nodeIdx = firstNode + ni;
       nodePos[nodeIdx] = {
         x: cellW * ni + cellW / 2,
         y: levelH * lv + levelH * 0.65,
@@ -219,29 +219,29 @@ function orDrawTree(activePath, targetNode) {
     }
   }
 
-  for (var nodeIdx = 1; nodeIdx <= OR_TOTAL_NODES; nodeIdx++) {
-    var left  = nodeIdx * 2;
-    var right = nodeIdx * 2 + 1;
+  for (let nodeIdx = 1; nodeIdx <= OR_TOTAL_NODES; nodeIdx++) {
+    let left  = nodeIdx * 2;
+    let right = nodeIdx * 2 + 1;
     if (left <= OR_TOTAL_NODES) {
-      var p = nodePos[nodeIdx]; var c = nodePos[left];
+      let p = nodePos[nodeIdx]; let c = nodePos[left];
       ctx.strokeStyle = 'rgba(148,163,184,0.2)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(c.x, c.y); ctx.stroke();
     }
     if (right <= OR_TOTAL_NODES) {
-      var p = nodePos[nodeIdx]; var c = nodePos[right];
+      let p = nodePos[nodeIdx]; let c = nodePos[right];
       ctx.strokeStyle = 'rgba(148,163,184,0.2)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(c.x, c.y); ctx.stroke();
     }
   }
 
-  for (var nodeIdx = 1; nodeIdx <= OR_TOTAL_NODES; nodeIdx++) {
-    var pos      = nodePos[nodeIdx];
-    var onPath   = activePath && activePath.indexOf(nodeIdx) !== -1;
-    var isTarget = nodeIdx === targetNode;
-    var isLeaf   = nodeIdx >= OR_LEAF_START;
-    var blocks   = orOramState.buckets[nodeIdx] || [];
+  for (let nodeIdx = 1; nodeIdx <= OR_TOTAL_NODES; nodeIdx++) {
+    let pos      = nodePos[nodeIdx];
+    let onPath   = activePath && activePath.indexOf(nodeIdx) !== -1;
+    let isTarget = nodeIdx === targetNode;
+    let isLeaf   = nodeIdx >= OR_LEAF_START;
+    let blocks   = orOramState.buckets[nodeIdx] || [];
 
-    var fillColor, strokeColor, glow;
+    let fillColor, strokeColor, glow;
     if (isTarget) {
       fillColor   = 'rgba(34,197,94,0.4)';
       strokeColor = '#22c55e';
@@ -256,7 +256,7 @@ function orDrawTree(activePath, targetNode) {
       glow        = null;
     }
 
-    var r = isLeaf ? 12 : 15;
+    let r = isLeaf ? 12 : 15;
 
     if (glow) {
       ctx.beginPath(); ctx.arc(pos.x, pos.y, r + 5, 0, Math.PI * 2);
@@ -275,7 +275,7 @@ function orDrawTree(activePath, targetNode) {
     ctx.fillText(blocks.length + '/' + OR_BUCKET_CAP, pos.x, pos.y);
 
     if (isLeaf) {
-      var leafIdx = nodeIdx - OR_LEAF_START;
+      let leafIdx = nodeIdx - OR_LEAF_START;
       ctx.fillStyle    = 'rgba(148,163,184,0.45)';
       ctx.font         = '7px Poppins,sans-serif';
       ctx.textBaseline = 'top';
@@ -291,27 +291,27 @@ function orOramAccess(blockId) {
   orOramState.accessCount++;
   orOramState.targetBlock = blockId;
 
-  var leaf     = orOramState.posMap[blockId];
-  var path     = orPathToLeaf(leaf);
+  let leaf     = orOramState.posMap[blockId];
+  let path     = orPathToLeaf(leaf);
   orOramState.activePath  = path.slice();
 
-  var newLeaf  = orRandInt(0, OR_N_LEAVES - 1);
+  let newLeaf  = orRandInt(0, OR_N_LEAVES - 1);
   orOramState.posMap[blockId] = newLeaf;
 
   orAddOramAdvLog(path, blockId);
   orAddAccessLog(blockId, leaf, newLeaf);
 
-  var blockDiv = document.querySelector('#orOramBlocks [data-block="' + blockId + '"]');
+  let blockDiv = document.querySelector('#orOramBlocks [data-block="' + blockId + '"]');
   if (blockDiv) blockDiv.classList.add('reading');
 
-  var step = 0;
+  let step = 0;
 
   function animateStep() {
-    var nodeIdx = path[step];
+    let nodeIdx = path[step];
 
-    var foundInBucket = false;
-    var newBucket     = [];
-    var blocks        = orOramState.buckets[nodeIdx] || [];
+    let foundInBucket = false;
+    let newBucket     = [];
+    let blocks        = orOramState.buckets[nodeIdx] || [];
     blocks.forEach(function(b) {
       if (b.blockId === blockId) {
         b.leaf       = newLeaf;
@@ -324,11 +324,11 @@ function orOramAccess(blockId) {
     orOramState.buckets[nodeIdx] = newBucket;
 
     if (!foundInBucket) {
-      var inStash = orOramState.stash.find(function(b) { return b.blockId === blockId; });
+      let inStash = orOramState.stash.find(function(b) { return b.blockId === blockId; });
       if (!inStash) orOramState.stash.push({ blockId: blockId, leaf: newLeaf });
     }
 
-    var isTarget = foundInBucket ? nodeIdx : null;
+    let isTarget = foundInBucket ? nodeIdx : null;
     orDrawTree(orOramState.activePath, isTarget);
     orRenderStash();
 
@@ -348,17 +348,17 @@ function orOramAccess(blockId) {
 
 /* ─── Evict stash back into tree ─── */
 function orEvictStash(path, targetBlockId, newLeaf) {
-  var remaining = [];
+  let remaining = [];
 
   orOramState.stash.forEach(function(block) {
-    var blockLeaf = block.blockId === targetBlockId ? newLeaf : orOramState.posMap[block.blockId];
+    let blockLeaf = block.blockId === targetBlockId ? newLeaf : orOramState.posMap[block.blockId];
     block.leaf    = blockLeaf;
 
-    var blockPath = orPathToLeaf(blockLeaf);
-    var placed    = false;
+    let blockPath = orPathToLeaf(blockLeaf);
+    let placed    = false;
 
-    for (var pi = 0; pi < path.length && !placed; pi++) {
-      var nodeIdx = path[pi];
+    for (let pi = 0; pi < path.length && !placed; pi++) {
+      let nodeIdx = path[pi];
       if (blockPath.indexOf(nodeIdx) !== -1 && orOramState.buckets[nodeIdx].length < OR_BUCKET_CAP) {
         orOramState.buckets[nodeIdx].push(block);
         placed = true;
@@ -377,7 +377,7 @@ function orEvictStash(path, targetBlockId, newLeaf) {
     orOramState.targetBlock = null;
     orOramState.animating   = false;
 
-    var blockDiv = document.querySelector('#orOramBlocks [data-block="' + targetBlockId + '"]');
+    let blockDiv = document.querySelector('#orOramBlocks [data-block="' + targetBlockId + '"]');
     if (blockDiv) blockDiv.classList.remove('reading');
 
     orDrawTree([], null);
@@ -390,27 +390,27 @@ function orEvictStash(path, targetBlockId, newLeaf) {
 
 /* ─── ORAM adversary log ─── */
 function orAddOramAdvLog(path, blockId) {
-  var log   = document.getElementById('orOramAdvLog');
-  var empty = log ? log.querySelector('.or-adv-empty') : null;
+  let log   = document.getElementById('orOramAdvLog');
+  let empty = log ? log.querySelector('.or-adv-empty') : null;
   if (empty) empty.remove();
 
-  var pathStr = path.map(function(n) { return 'node#' + n; }).join(' → ');
-  var entry   = document.createElement('div');
+  let pathStr = path.map(function(n) { return 'node#' + n; }).join(' → ');
+  let entry   = document.createElement('div');
   entry.className = 'or-adv-entry good';
   entry.textContent = 'Access #' + orOramState.accessCount + ': PATH ' + pathStr + ' — cannot determine which block was read!';
   if (log) log.insertBefore(entry, log.firstChild);
 
-  var idEl = document.getElementById('orOramIdentified');
+  let idEl = document.getElementById('orOramIdentified');
   if (idEl) idEl.textContent = '0 / ' + OR_N_BLOCKS;
 }
 
 /* ─── ORAM access log ─── */
 function orAddAccessLog(blockId, oldLeaf, newLeaf) {
-  var log   = document.getElementById('orAccessLog');
-  var empty = log ? log.querySelector('.or-adv-empty') : null;
+  let log   = document.getElementById('orAccessLog');
+  let empty = log ? log.querySelector('.or-adv-empty') : null;
   if (empty) empty.remove();
 
-  var entry = document.createElement('div');
+  let entry = document.createElement('div');
   entry.className = 'or-access-entry';
   entry.textContent = 'blk#' + blockId + ' ' + OR_BLOCK_EMOJI[blockId] + ' "' + OR_BLOCK_NAMES[blockId] + '" — leaf: ' + oldLeaf + ' → re-rand: ' + newLeaf;
   if (log) log.insertBefore(entry, log.firstChild);

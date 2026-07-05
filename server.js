@@ -3308,7 +3308,7 @@ function hasUnusedVariables(code) {
     if (!vars) return false;
     
     for (const v of vars) {
-        const name = v.replace(/let |const |var /g, '');
+        const name = v.replace(/let |const |let /g, '');
         if (code.split(name).length <= 2) {
             return true;
         }

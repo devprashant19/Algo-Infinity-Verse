@@ -3,13 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* ─── Synthetic dataset ─── */
-var DP_NAMES = [
+let DP_NAMES = [
   'Alice','Bob','Carol','David','Eve','Frank','Grace','Hank',
   'Iris','Jack','Karen','Leo','Mia','Nate','Olivia','Paul',
   'Quinn','Rosa','Sam','Tina',
 ];
 
-var dpState = {
+let dpState = {
   dataset   : [],
   attribute : 'salary',
   queryType : 'mean',
@@ -30,7 +30,7 @@ function dpGenerateDataset() {
 
 /* ─── True query values ─── */
 function dpTrueAnswer(dataset, attr, qtype, threshold) {
-  var values = dataset.map(function(d) { return d[attr]; });
+  let values = dataset.map(function(d) { return d[attr]; });
   if (qtype === 'mean')  return values.reduce(function(a,b){return a+b;},0) / values.length;
   if (qtype === 'sum')   return values.reduce(function(a,b){return a+b;},0);
   if (qtype === 'count') return values.filter(function(v){return v >= threshold;}).length;
@@ -39,7 +39,7 @@ function dpTrueAnswer(dataset, attr, qtype, threshold) {
 
 /* ─── Sensitivity per query type ─── */
 function dpSensitivity(attr, qtype, n) {
-  var maxVal = attr === 'salary' ? 150 : 1;
+  let maxVal = attr === 'salary' ? 150 : 1;
   if (qtype === 'mean')  return maxVal / n;   // removing one person changes mean by at most maxVal/n
   if (qtype === 'sum')   return maxVal;        // removing one person changes sum by at most maxVal
   if (qtype === 'count') return 1;             // removing one person changes count by at most 1
@@ -49,21 +49,21 @@ function dpSensitivity(attr, qtype, n) {
 /* ─── Sample Laplace noise ─── */
 function dpLaplaceNoise(scale) {
   // Inverse CDF sampling: Laplace(0, scale)
-  var u = Math.random() - 0.5;
+  let u = Math.random() - 0.5;
   return -scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
 }
 
 /* ─── Render dataset table ─── */
 function dpRenderTable(highlightIdx) {
-  var tbody = document.getElementById('dpDataBody');
-  var attrHeader = document.getElementById('dpAttrHeader');
+  let tbody = document.getElementById('dpDataBody');
+  let attrHeader = document.getElementById('dpAttrHeader');
   if (!tbody) return;
   if (attrHeader) attrHeader.textContent = dpState.attribute === 'salary' ? 'Salary ($k)' : 'Health Flag';
 
   tbody.innerHTML = dpState.dataset.map(function(person, i) {
-    var val   = person[dpState.attribute];
-    var isHighlighted = i === highlightIdx;
-    var dotColor = isHighlighted ? '#ef4444' : 'rgba(148,163,184,0.2)';
+    let val   = person[dpState.attribute];
+    let isHighlighted = i === highlightIdx;
+    let dotColor = isHighlighted ? '#ef4444' : 'rgba(148,163,184,0.2)';
     return '<tr class="' + (isHighlighted ? 'dp-highlighted' : '') + '">' +
       '<td>' + (i+1) + '</td>' +
       '<td>' + person.name + '</td>' +
@@ -73,13 +73,13 @@ function dpRenderTable(highlightIdx) {
   }).join('');
 
   // Update true stats
-  var n = dpState.dataset.length;
-  var mean = dpTrueAnswer(dpState.dataset, dpState.attribute, 'mean', dpState.threshold);
-  var count = dpTrueAnswer(dpState.dataset, dpState.attribute, 'count', dpState.threshold);
+  let n = dpState.dataset.length;
+  let mean = dpTrueAnswer(dpState.dataset, dpState.attribute, 'mean', dpState.threshold);
+  let count = dpTrueAnswer(dpState.dataset, dpState.attribute, 'count', dpState.threshold);
 
-  var nEl = document.getElementById('dpN');
-  var meanEl = document.getElementById('dpTrueMean');
-  var countEl = document.getElementById('dpTrueCount');
+  let nEl = document.getElementById('dpN');
+  let meanEl = document.getElementById('dpTrueMean');
+  let countEl = document.getElementById('dpTrueCount');
   if (nEl) nEl.textContent = n;
   if (meanEl) meanEl.textContent = mean.toFixed(2);
   if (countEl) countEl.textContent = count + (dpState.attribute === 'salary' ? ' (≥ $' + dpState.threshold + 'k)' : ' (= 1)');
@@ -87,23 +87,23 @@ function dpRenderTable(highlightIdx) {
 
 /* ─── Update epsilon display ─── */
 function dpUpdateEpsilonDisplay() {
-  var eps = dpState.epsilon;
-  var valEl = document.getElementById('dpEpsilonVal');
-  var interpEl = document.getElementById('dpEpsInterp');
-  var sensEl = document.getElementById('dpSensitivity');
-  var scaleEl = document.getElementById('dpLaplaceScale');
+  let eps = dpState.epsilon;
+  let valEl = document.getElementById('dpEpsilonVal');
+  let interpEl = document.getElementById('dpEpsInterp');
+  let sensEl = document.getElementById('dpSensitivity');
+  let scaleEl = document.getElementById('dpLaplaceScale');
 
   if (valEl) valEl.textContent = eps.toFixed(2);
 
-  var interp = eps < 0.5  ? 'Very high privacy, large error' :
+  let interp = eps < 0.5  ? 'Very high privacy, large error' :
                eps < 1.5  ? 'Balanced privacy & accuracy' :
                eps < 3.0  ? 'Lower privacy, smaller error' :
                              'Low privacy, near-accurate results';
   if (interpEl) interpEl.textContent = interp;
 
-  var n = dpState.dataset.length;
-  var sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
-  var scale = sens / eps;
+  let n = dpState.dataset.length;
+  let sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let scale = sens / eps;
 
   if (sensEl) sensEl.textContent = sens.toFixed(4);
   if (scaleEl) scaleEl.textContent = scale.toFixed(4);
@@ -113,23 +113,23 @@ function dpUpdateEpsilonDisplay() {
 
 /* ─── Run a single DP query ─── */
 function dpRunQuery() {
-  var n = dpState.dataset.length;
-  var trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
-  var sens  = dpSensitivity(dpState.attribute, dpState.queryType, n);
-  var scale = sens / dpState.epsilon;
-  var noise = dpLaplaceNoise(scale);
-  var noisyAns = trueAns + noise;
+  let n = dpState.dataset.length;
+  let trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
+  let sens  = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let scale = sens / dpState.epsilon;
+  let noise = dpLaplaceNoise(scale);
+  let noisyAns = trueAns + noise;
 
   // Show result
-  var placeholder = document.getElementById('dpResultPlaceholder');
-  var inner = document.getElementById('dpResultInner');
+  let placeholder = document.getElementById('dpResultPlaceholder');
+  let inner = document.getElementById('dpResultInner');
   if (placeholder) placeholder.classList.add('hidden');
   if (inner) inner.classList.remove('hidden');
 
-  var trueEl  = document.getElementById('dpTrueAnswer');
-  var noiseEl = document.getElementById('dpNoiseAdded');
-  var noisyEl = document.getElementById('dpNoisyAnswer');
-  var errEl   = document.getElementById('dpError');
+  let trueEl  = document.getElementById('dpTrueAnswer');
+  let noiseEl = document.getElementById('dpNoiseAdded');
+  let noisyEl = document.getElementById('dpNoisyAnswer');
+  let errEl   = document.getElementById('dpError');
 
   if (trueEl)  trueEl.textContent  = trueAns.toFixed(3);
   if (noiseEl) noiseEl.textContent = (noise >= 0 ? '+' : '') + noise.toFixed(3);
@@ -139,20 +139,20 @@ function dpRunQuery() {
 
 /* ─── Run 100 queries (budget composition demo) ─── */
 function dpRun100Queries() {
-  var n = dpState.dataset.length;
-  var trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
-  var sens  = dpSensitivity(dpState.attribute, dpState.queryType, n);
-  var scale = sens / dpState.epsilon;
+  let n = dpState.dataset.length;
+  let trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
+  let sens  = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let scale = sens / dpState.epsilon;
 
-  var results = [];
-  for (var i = 0; i < 100; i++) results.push(trueAns + dpLaplaceNoise(scale));
-  var averaged = results.reduce(function(a,b){return a+b;},0) / results.length;
+  let results = [];
+  for (let i = 0; i < 100; i++) results.push(trueAns + dpLaplaceNoise(scale));
+  let averaged = results.reduce(function(a,b){return a+b;},0) / results.length;
 
   // Show composition card
-  var compCard = document.getElementById('dpCompositionCard');
+  let compCard = document.getElementById('dpCompositionCard');
   if (compCard) compCard.classList.remove('hidden');
 
-  var compResult = document.getElementById('dpCompResult');
+  let compResult = document.getElementById('dpCompResult');
   if (compResult) {
     compResult.textContent = '100 queries averaged: ' + averaged.toFixed(3) + ' (true: ' + trueAns.toFixed(3) + ', error: ' + Math.abs(averaged - trueAns).toFixed(3) + '). ' +
       'Privacy budget consumed: 100 × ε = ' + (100 * dpState.epsilon).toFixed(1) + '.';
@@ -166,42 +166,42 @@ function dpRun100Queries() {
 
 /* ─── Histogram of Laplace noise ─── */
 function dpDrawHistogram(scale) {
-  var canvas = document.getElementById('dpHistCanvas');
+  let canvas = document.getElementById('dpHistCanvas');
   if (!canvas) return;
-  var wrap = canvas.parentElement;
+  let wrap = canvas.parentElement;
   canvas.width = wrap.clientWidth; canvas.height = 180;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var pad = { top: 15, right: 20, bottom: 30, left: 40 };
-  var plotW = canvas.width - pad.left - pad.right;
-  var plotH = canvas.height - pad.top - pad.bottom;
+  let pad = { top: 15, right: 20, bottom: 30, left: 40 };
+  let plotW = canvas.width - pad.left - pad.right;
+  let plotH = canvas.height - pad.top - pad.bottom;
 
   // Sample noise values for the histogram
-  var samples = 3000;
-  var values = [];
-  for (var i = 0; i < samples; i++) values.push(dpLaplaceNoise(scale));
+  let samples = 3000;
+  let values = [];
+  for (let i = 0; i < samples; i++) values.push(dpLaplaceNoise(scale));
 
-  var minV = Math.min.apply(null, values); var maxV = Math.max.apply(null, values);
-  var range = Math.max(maxV - minV, 0.001);
-  var bins = 40;
-  var counts = new Array(bins).fill(0);
+  let minV = Math.min.apply(null, values); let maxV = Math.max.apply(null, values);
+  let range = Math.max(maxV - minV, 0.001);
+  let bins = 40;
+  let counts = new Array(bins).fill(0);
   values.forEach(function(v) {
-    var b = Math.floor(((v - minV) / range) * (bins - 1));
+    let b = Math.floor(((v - minV) / range) * (bins - 1));
     counts[Math.max(0, Math.min(bins-1, b))]++;
   });
-  var maxCount = Math.max.apply(null, counts);
+  let maxCount = Math.max.apply(null, counts);
 
   // Draw bars
-  var barW = plotW / bins;
+  let barW = plotW / bins;
   counts.forEach(function(c, i) {
-    var x = pad.left + i * barW;
-    var h = (c / maxCount) * plotH;
-    var t = i / bins; // 0=left, 1=right
+    let x = pad.left + i * barW;
+    let h = (c / maxCount) * plotH;
+    let t = i / bins; // 0=left, 1=right
     // color gradient from cyan to purple
-    var r = Math.round(6 + t * 162);
-    var g = Math.round(182 - t * 97);
-    var b = Math.round(212 + t * 35);
+    let r = Math.round(6 + t * 162);
+    let g = Math.round(182 - t * 97);
+    let b = Math.round(212 + t * 35);
     ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.7)';
     ctx.fillRect(x, pad.top + plotH - h, barW - 1, h);
   });
@@ -215,7 +215,7 @@ function dpDrawHistogram(scale) {
   ctx.stroke();
 
   // Zero line
-  var zeroX = pad.left + ((0 - minV) / range) * plotW;
+  let zeroX = pad.left + ((0 - minV) / range) * plotW;
   if (zeroX >= pad.left && zeroX <= pad.left + plotW) {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.setLineDash([3, 2]);
@@ -236,43 +236,43 @@ function dpDrawHistogram(scale) {
   ctx.fillStyle = 'rgba(168,85,247,0.8)'; ctx.font = 'bold 9px Poppins,sans-serif'; ctx.textAlign = 'left';
   ctx.fillText('Laplace(0, b=' + scale.toFixed(3) + ')  —  ε=' + dpState.epsilon.toFixed(2), pad.left + 4, pad.top + 10);
 
-  var infoEl = document.getElementById('dpHistInfo');
+  let infoEl = document.getElementById('dpHistInfo');
   if (infoEl) infoEl.textContent = 'Scale b = ' + scale.toFixed(3) + '. ~68% of noise falls within ±' + scale.toFixed(2) + ' of 0. ' + (dpState.epsilon < 1 ? 'Wide distribution = strong privacy, less accuracy.' : dpState.epsilon > 2 ? 'Narrow distribution = weak privacy, high accuracy.' : 'Moderate noise — balanced tradeoff.');
 }
 
 /* ─── Privacy-Utility tradeoff chart ─── */
 function dpDrawTradeoffChart() {
-  var canvas = document.getElementById('dpTradeoffCanvas');
+  let canvas = document.getElementById('dpTradeoffCanvas');
   if (!canvas) return;
-  var wrap = canvas.parentElement;
+  let wrap = canvas.parentElement;
   canvas.width = wrap.clientWidth; canvas.height = 180;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var pad = { top: 15, right: 15, bottom: 28, left: 50 };
-  var plotW = canvas.width - pad.left - pad.right;
-  var plotH = canvas.height - pad.top - pad.bottom;
+  let pad = { top: 15, right: 15, bottom: 28, left: 50 };
+  let plotW = canvas.width - pad.left - pad.right;
+  let plotH = canvas.height - pad.top - pad.bottom;
 
-  var n = dpState.dataset.length;
-  var sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
-  var trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
+  let n = dpState.dataset.length;
+  let sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let trueAns = dpTrueAnswer(dpState.dataset, dpState.attribute, dpState.queryType, dpState.threshold);
 
   // Sample 50 epsilon values from 0.1 to 5.0, compute expected error = E[|Laplace(scale)|] = scale
-  var epsilons = [];
-  for (var i = 0; i <= 50; i++) epsilons.push(0.1 + (i / 50) * 4.9);
-  var errors = epsilons.map(function(eps) { return sens / eps; }); // expected |Laplace(b)| = b = sens/eps
+  let epsilons = [];
+  for (let i = 0; i <= 50; i++) epsilons.push(0.1 + (i / 50) * 4.9);
+  let errors = epsilons.map(function(eps) { return sens / eps; }); // expected |Laplace(b)| = b = sens/eps
 
-  var maxError = Math.max.apply(null, errors);
+  let maxError = Math.max.apply(null, errors);
 
   function xPos(eps) { return pad.left + ((eps - 0.1) / 4.9) * plotW; }
   function yPos(err) { return pad.top + (1 - err / maxError) * plotH; }
 
   // Grid
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  for (var i = 0; i <= 4; i++) {
-    var y = pad.top + (i/4) * plotH;
+  for (let i = 0; i <= 4; i++) {
+    let y = pad.top + (i/4) * plotH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+plotW, y); ctx.stroke();
-    var errLabel = (maxError * (1 - i/4)).toFixed(2);
+    let errLabel = (maxError * (1 - i/4)).toFixed(2);
     ctx.fillStyle = 'rgba(148,163,184,0.4)'; ctx.font = '8px Fira Code,monospace'; ctx.textAlign = 'right';
     ctx.fillText(errLabel, pad.left - 4, y + 3);
   }
@@ -280,7 +280,7 @@ function dpDrawTradeoffChart() {
   // X axis labels
   ctx.textAlign = 'center';
   [0.1, 1, 2, 3, 4, 5].forEach(function(eps) {
-    var x = xPos(eps);
+    let x = xPos(eps);
     ctx.fillText(eps, x, canvas.height - 10);
   });
 
@@ -289,20 +289,20 @@ function dpDrawTradeoffChart() {
   ctx.fillText('ε (epsilon)', pad.left + plotW/2, canvas.height - 2);
 
   // Tradeoff curve (gradient colored)
-  for (var i = 0; i < epsilons.length - 1; i++) {
-    var x1 = xPos(epsilons[i]); var y1 = yPos(errors[i]);
-    var x2 = xPos(epsilons[i+1]); var y2 = yPos(errors[i+1]);
-    var t = i / epsilons.length;
-    var r = Math.round(239 - t * (239-34));
-    var g = Math.round(68  + t * (197-68));
-    var b = Math.round(68  - t * 46);
+  for (let i = 0; i < epsilons.length - 1; i++) {
+    let x1 = xPos(epsilons[i]); let y1 = yPos(errors[i]);
+    let x2 = xPos(epsilons[i+1]); let y2 = yPos(errors[i+1]);
+    let t = i / epsilons.length;
+    let r = Math.round(239 - t * (239-34));
+    let g = Math.round(68  + t * (197-68));
+    let b = Math.round(68  - t * 46);
     ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.9)';
     ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   }
 
   // Current epsilon marker
-  var curX = xPos(dpState.epsilon);
+  let curX = xPos(dpState.epsilon);
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.setLineDash([3,2]);
   ctx.beginPath(); ctx.moveTo(curX, pad.top); ctx.lineTo(curX, pad.top+plotH); ctx.stroke();
   ctx.setLineDash([]);
@@ -312,25 +312,25 @@ function dpDrawTradeoffChart() {
 
 /* ─── Composition chart ─── */
 function dpDrawCompositionChart(results, trueAns) {
-  var canvas = document.getElementById('dpCompositionCanvas');
+  let canvas = document.getElementById('dpCompositionCanvas');
   if (!canvas) return;
-  var wrap = canvas.parentElement;
+  let wrap = canvas.parentElement;
   canvas.width = wrap.clientWidth; canvas.height = 160;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var pad = { top: 15, right: 15, bottom: 25, left: 50 };
-  var plotW = canvas.width - pad.left - pad.right;
-  var plotH = canvas.height - pad.top - pad.bottom;
+  let pad = { top: 15, right: 15, bottom: 25, left: 50 };
+  let plotW = canvas.width - pad.left - pad.right;
+  let plotH = canvas.height - pad.top - pad.bottom;
 
   // Running average after k queries
-  var runAvg = [];
-  var sum = 0;
+  let runAvg = [];
+  let sum = 0;
   results.forEach(function(v, i) { sum += v; runAvg.push(sum / (i+1)); });
 
-  var allVals = runAvg.concat([trueAns]);
-  var minV = Math.min.apply(null, allVals) - 1;
-  var maxV = Math.max.apply(null, allVals) + 1;
+  let allVals = runAvg.concat([trueAns]);
+  let minV = Math.min.apply(null, allVals) - 1;
+  let maxV = Math.max.apply(null, allVals) + 1;
 
   function xPos(i) { return pad.left + (i / (results.length-1)) * plotW; }
   function yPos(v) { return pad.top + (1 - (v-minV)/(maxV-minV)) * plotH; }
@@ -360,26 +360,26 @@ function dpDrawCompositionChart(results, trueAns) {
 
 /* ─── Attacker demo ─── */
 function dpRunAttackDemo() {
-  var targetIdx = parseInt(document.getElementById('dpTargetPerson').value);
-  var targetPerson = dpState.dataset[targetIdx];
+  let targetIdx = parseInt(document.getElementById('dpTargetPerson').value);
+  let targetPerson = dpState.dataset[targetIdx];
 
-  var fullDataset = dpState.dataset;
-  var withoutTarget = dpState.dataset.filter(function(_, i){ return i !== targetIdx; });
+  let fullDataset = dpState.dataset;
+  let withoutTarget = dpState.dataset.filter(function(_, i){ return i !== targetIdx; });
 
-  var n = fullDataset.length;
-  var sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
-  var scale = sens / dpState.epsilon;
+  let n = fullDataset.length;
+  let sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let scale = sens / dpState.epsilon;
 
-  var trueWith    = dpTrueAnswer(fullDataset, dpState.attribute, dpState.queryType, dpState.threshold);
-  var trueWithout = dpTrueAnswer(withoutTarget, dpState.attribute, dpState.queryType, dpState.threshold);
-  var trueDiff    = Math.abs(trueWith - trueWithout);
+  let trueWith    = dpTrueAnswer(fullDataset, dpState.attribute, dpState.queryType, dpState.threshold);
+  let trueWithout = dpTrueAnswer(withoutTarget, dpState.attribute, dpState.queryType, dpState.threshold);
+  let trueDiff    = Math.abs(trueWith - trueWithout);
 
   // DP queries (noisy)
-  var noisyWith    = trueWith    + dpLaplaceNoise(scale);
-  var noisyWithout = trueWithout + dpLaplaceNoise(scale);
-  var noisyDiff    = Math.abs(noisyWith - noisyWithout);
+  let noisyWith    = trueWith    + dpLaplaceNoise(scale);
+  let noisyWithout = trueWithout + dpLaplaceNoise(scale);
+  let noisyDiff    = Math.abs(noisyWith - noisyWithout);
 
-  var resultEl = document.getElementById('dpAttackerResult');
+  let resultEl = document.getElementById('dpAttackerResult');
   if (resultEl) resultEl.classList.remove('hidden');
 
   document.getElementById('dpAtkWithRaw').textContent    = trueWith.toFixed(3);
@@ -391,8 +391,8 @@ function dpRunAttackDemo() {
   document.getElementById('dpAtkEps').textContent        = dpState.epsilon.toFixed(2);
 
   // Verdict: if noisy diff is within 2x of scale, attacker can't reliably distinguish
-  var verdictEl = document.getElementById('dpAtkVerdict');
-  var isProtected = noisyDiff < scale * 2;
+  let verdictEl = document.getElementById('dpAtkVerdict');
+  let isProtected = noisyDiff < scale * 2;
   if (verdictEl) {
     verdictEl.className = 'dp-attack-verdict ' + (isProtected ? 'dp-verdict-good' : 'dp-verdict-bad');
     verdictEl.textContent = isProtected
@@ -406,7 +406,7 @@ function dpRunAttackDemo() {
 
 /* ─── Populate person dropdown ─── */
 function dpPopulatePersonDropdown() {
-  var sel = document.getElementById('dpTargetPerson');
+  let sel = document.getElementById('dpTargetPerson');
   if (!sel) return;
   sel.innerHTML = dpState.dataset.map(function(p, i) {
     return '<option value="' + i + '">' + p.name + ' (' + dpState.attribute + '=' + p[dpState.attribute] + ')</option>';
@@ -422,7 +422,7 @@ function dpInit() {
   dpPopulatePersonDropdown();
 
   // Attribute selector
-  var attrSel = document.getElementById('dpAttrSelect');
+  let attrSel = document.getElementById('dpAttrSelect');
   if (attrSel) {
     attrSel.addEventListener('change', function() {
       dpState.attribute = attrSel.value;
@@ -434,7 +434,7 @@ function dpInit() {
   }
 
   // Regenerate dataset
-  var shuffleBtn = document.getElementById('dpShuffleBtn');
+  let shuffleBtn = document.getElementById('dpShuffleBtn');
   if (shuffleBtn) shuffleBtn.addEventListener('click', function() {
     dpGenerateDataset();
     dpRenderTable(-1);
@@ -442,18 +442,18 @@ function dpInit() {
     dpDrawTradeoffChart();
     dpPopulatePersonDropdown();
     // Clear results
-    var placeholder = document.getElementById('dpResultPlaceholder');
-    var inner = document.getElementById('dpResultInner');
+    let placeholder = document.getElementById('dpResultPlaceholder');
+    let inner = document.getElementById('dpResultInner');
     if (placeholder) placeholder.classList.remove('hidden');
     if (inner) inner.classList.add('hidden');
-    var attResult = document.getElementById('dpAttackerResult');
+    let attResult = document.getElementById('dpAttackerResult');
     if (attResult) attResult.classList.add('hidden');
-    var compCard = document.getElementById('dpCompositionCard');
+    let compCard = document.getElementById('dpCompositionCard');
     if (compCard) compCard.classList.add('hidden');
   });
 
   // Epsilon slider
-  var epsSl = document.getElementById('dpEpsilon');
+  let epsSl = document.getElementById('dpEpsilon');
   if (epsSl) {
     epsSl.addEventListener('input', function() {
       dpState.epsilon = parseFloat(epsSl.value);
@@ -469,7 +469,7 @@ function dpInit() {
       btn.classList.add('active');
       dpState.queryType = btn.getAttribute('data-qtype');
 
-      var thrRow = document.getElementById('dpThresholdRow');
+      let thrRow = document.getElementById('dpThresholdRow');
       if (thrRow) thrRow.style.display = dpState.queryType === 'count' ? '' : 'none';
 
       dpUpdateEpsilonDisplay();
@@ -478,7 +478,7 @@ function dpInit() {
   });
 
   // Threshold input
-  var thrInput = document.getElementById('dpThreshold');
+  let thrInput = document.getElementById('dpThreshold');
   if (thrInput) {
     thrInput.addEventListener('input', function() {
       dpState.threshold = parseFloat(thrInput.value) || 50;
@@ -487,17 +487,17 @@ function dpInit() {
   }
 
   // Query buttons
-  var queryBtn = document.getElementById('dpQueryBtn');
-  var query100Btn = document.getElementById('dpQuery100Btn');
+  let queryBtn = document.getElementById('dpQueryBtn');
+  let query100Btn = document.getElementById('dpQuery100Btn');
   if (queryBtn)   queryBtn.addEventListener('click', dpRunQuery);
   if (query100Btn) query100Btn.addEventListener('click', dpRun100Queries);
 
   // Attack button
-  var attBtn = document.getElementById('dpAttackBtn');
+  let attBtn = document.getElementById('dpAttackBtn');
   if (attBtn) attBtn.addEventListener('click', dpRunAttackDemo);
 
   // Person dropdown change → update table highlight
-  var personSel = document.getElementById('dpTargetPerson');
+  let personSel = document.getElementById('dpTargetPerson');
   if (personSel) {
     personSel.addEventListener('change', function() {
       dpRenderTable(parseInt(personSel.value));
@@ -505,8 +505,8 @@ function dpInit() {
   }
 
   // Initial histogram draw
-  var n = dpState.dataset.length;
-  var sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
+  let n = dpState.dataset.length;
+  let sens = dpSensitivity(dpState.attribute, dpState.queryType, n);
   dpDrawHistogram(sens / dpState.epsilon);
 
   // Resize

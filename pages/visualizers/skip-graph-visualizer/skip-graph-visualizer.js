@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   sgInit();
 });
 
-var sgState = {
+let sgState = {
   nodes       : [],   
   mvBits      : 4,
   tool        : 'search',
@@ -12,26 +12,26 @@ var sgState = {
 };
 
 
-var SG_NODE_R = 18;
+let SG_NODE_R = 18;
 
 function sgGenerate() {
-  var n = Math.max(4, Math.min(16, parseInt(document.getElementById('sgNodeCount').value) || 10));
-  var mvBits = parseInt(document.getElementById('sgMvBits').value) || 4;
+  let n = Math.max(4, Math.min(16, parseInt(document.getElementById('sgNodeCount').value) || 10));
+  let mvBits = parseInt(document.getElementById('sgMvBits').value) || 4;
   sgState.mvBits = mvBits;
 
-  var keys = [];
+  let keys = [];
   if (n <= 9) {
-    for (var i = 1; i <= n; i++) keys.push(i * 10);
+    for (let i = 1; i <= n; i++) keys.push(i * 10);
   } else {
-    var pool = [];
-    for (var i = 10; i <= 99; i += 5) pool.push(i);
+    let pool = [];
+    for (let i = 10; i <= 99; i += 5) pool.push(i);
     pool.sort(function() { return Math.random() - 0.5; });
     keys = pool.slice(0, n).sort(function(a, b) { return a - b; });
   }
 
   sgState.nodes = keys.map(function(k) {
-    var mv = '';
-    for (var j = 0; j < mvBits; j++) mv += Math.round(Math.random());
+    let mv = '';
+    for (let j = 0; j < mvBits; j++) mv += Math.round(Math.random());
     return { key: k, mv: mv, alive: true };
   });
 
@@ -49,17 +49,17 @@ function sgGenerate() {
 
 /* ─── Compute node positions in concentric rings ─── */
 function sgComputePositions() {
-  var wrap = document.getElementById('sgCanvasWrap');
-  var W = Math.min(wrap ? wrap.clientWidth : 600, 700);
-  var H = Math.max(440, W * 0.8);
-  var cx = W / 2; var cy = H / 2;
+  let wrap = document.getElementById('sgCanvasWrap');
+  let W = Math.min(wrap ? wrap.clientWidth : 600, 700);
+  let H = Math.max(440, W * 0.8);
+  let cx = W / 2; let cy = H / 2;
 
-  var aliveNodes = sgState.nodes.filter(function(n){ return n.alive; });
+  let aliveNodes = sgState.nodes.filter(function(n){ return n.alive; });
 
   // Level 0: all alive nodes in a ring
-  var r0 = Math.min(cx, cy) - SG_NODE_R - 20;
+  let r0 = Math.min(cx, cy) - SG_NODE_R - 20;
   aliveNodes.forEach(function(node, i) {
-    var angle = (2 * Math.PI * i / aliveNodes.length) - Math.PI / 2;
+    let angle = (2 * Math.PI * i / aliveNodes.length) - Math.PI / 2;
     node.x0 = cx + r0 * Math.cos(angle);
     node.y0 = cy + r0 * Math.sin(angle);
     node.x = node.x0;
@@ -84,10 +84,10 @@ function sgComputePositions() {
 /* ─── Get members at level k ─── */
 function sgLevelMembers(level) {
   if (level === 0) return sgState.nodes.filter(function(n){ return n.alive; });
-  var groups = {};
+  let groups = {};
   sgState.nodes.forEach(function(n) {
     if (!n.alive) return;
-    var prefix = n.mv.substring(0, level);
+    let prefix = n.mv.substring(0, level);
     if (!groups[prefix]) groups[prefix] = [];
     groups[prefix].push(n);
   });
@@ -96,28 +96,28 @@ function sgLevelMembers(level) {
 
 /* ─── Search from startKey toward targetKey ─── */
 function sgSearch(startKey, targetKey) {
-  var path = [];
-  var cur = sgState.nodes.find(function(n){ return n.key === startKey && n.alive; });
+  let path = [];
+  let cur = sgState.nodes.find(function(n){ return n.key === startKey && n.alive; });
   if (!cur) return path;
   if (cur.key === targetKey) { path.push({ type: 'found', key: cur.key }); return path; }
 
   path.push({ type: 'start', key: cur.key });
 
-  for (var level = sgState.mvBits; level >= 0; level--) {
+  for (let level = sgState.mvBits; level >= 0; level--) {
     // Get members at this level sharing prefix with cur
-    var members;
+    let members;
     if (level === 0) {
       members = sgState.nodes.filter(function(n){ return n.alive; }).sort(function(a,b){ return a.key-b.key; });
     } else {
-      var prefix = cur.mv.substring(0, level);
+      let prefix = cur.mv.substring(0, level);
       members = sgState.nodes.filter(function(n){
         return n.alive && n.mv.substring(0, level) === prefix;
       }).sort(function(a,b){ return a.key-b.key; });
     }
     if (members.length < 2) continue;
-    var best = cur;
-    for (var i = 0; i < members.length; i++) {
-      var m = members[i];
+    let best = cur;
+    for (let i = 0; i < members.length; i++) {
+      let m = members[i];
       if (m.key <= targetKey && m.key >= best.key) best = m;
     }
 
@@ -135,34 +135,34 @@ function sgSearch(startKey, targetKey) {
 
 /* ─── Render ─── */
 function sgRender() {
-  var canvas = document.getElementById('sgCanvas');
+  let canvas = document.getElementById('sgCanvas');
   if (!canvas) return;
-  var W = sgState._canvasW || 600;
-  var H = sgState._canvasH || 480;
+  let W = sgState._canvasW || 600;
+  let H = sgState._canvasH || 480;
   canvas.width = W; canvas.height = H;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
-  var cx = sgState._cx;
-  var cy = sgState._cy;
-  var r0 = sgState._r0;
+  let cx = sgState._cx;
+  let cy = sgState._cy;
+  let r0 = sgState._r0;
 
 
-  var pathNodeKeys = {};
-  var pathEdges = []; // {fromKey, toKey, level}
+  let pathNodeKeys = {};
+  let pathEdges = []; // {fromKey, toKey, level}
   sgState.searchPath.forEach(function(step) {
     if (step.type === 'move') { pathNodeKeys[step.fromKey] = true; pathNodeKeys[step.toKey] = true; pathEdges.push(step); }
     if (step.type === 'found' || step.type === 'start') pathNodeKeys[step.key] = true;
   });
 
-  var aliveNodes = sgState.nodes.filter(function(n){ return n.alive; });
+  let aliveNodes = sgState.nodes.filter(function(n){ return n.alive; });
 
 
-  for (var level = 1; level <= sgState.mvBits; level++) {
-    var members = sgState.nodes.filter(function(n){
+  for (let level = 1; level <= sgState.mvBits; level++) {
+    let members = sgState.nodes.filter(function(n){
       return n.alive;
     });
-    var ringR = r0 * (1 - level * (0.18 / sgState.mvBits));
+    let ringR = r0 * (1 - level * (0.18 / sgState.mvBits));
     if (ringR < 40) break;
     ctx.beginPath();
     ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
@@ -177,8 +177,8 @@ function sgRender() {
 
   // Draw level-0 ring connections (all alive nodes in sorted order)
   if (aliveNodes.length > 1) {
-    for (var i = 0; i < aliveNodes.length; i++) {
-      var a = aliveNodes[i]; var b = aliveNodes[(i+1) % aliveNodes.length];
+    for (let i = 0; i < aliveNodes.length; i++) {
+      let a = aliveNodes[i]; let b = aliveNodes[(i+1) % aliveNodes.length];
       ctx.beginPath();
       ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
       ctx.strokeStyle = 'rgba(6,182,212,0.18)'; ctx.lineWidth = 1.2;
@@ -187,22 +187,22 @@ function sgRender() {
   }
 
   // Draw higher-level connections per group
-  for (var level = 1; level <= sgState.mvBits; level++) {
-    var groupsObj = {};
+  for (let level = 1; level <= sgState.mvBits; level++) {
+    let groupsObj = {};
     sgState.nodes.forEach(function(n) {
       if (!n.alive) return;
-      var prefix = n.mv.substring(0, level);
+      let prefix = n.mv.substring(0, level);
       if (!groupsObj[prefix]) groupsObj[prefix] = [];
       groupsObj[prefix].push(n);
     });
 
-    var levelColors = ['', 'rgba(168,85,247,0.3)', 'rgba(34,197,94,0.25)', 'rgba(245,158,11,0.2)', 'rgba(239,68,68,0.2)'];
-    var color = levelColors[Math.min(level, levelColors.length-1)];
+    let levelColors = ['', 'rgba(168,85,247,0.3)', 'rgba(34,197,94,0.25)', 'rgba(245,158,11,0.2)', 'rgba(239,68,68,0.2)'];
+    let color = levelColors[Math.min(level, levelColors.length-1)];
 
     Object.keys(groupsObj).forEach(function(prefix) {
-      var group = groupsObj[prefix].sort(function(a,b){return a.key-b.key;});
+      let group = groupsObj[prefix].sort(function(a,b){return a.key-b.key;});
       if (group.length < 2) return;
-      for (var i = 0; i < group.length - 1; i++) {
+      for (let i = 0; i < group.length - 1; i++) {
         ctx.beginPath();
         ctx.moveTo(group[i].x, group[i].y); ctx.lineTo(group[i+1].x, group[i+1].y);
         ctx.strokeStyle = color; ctx.lineWidth = 1.5;
@@ -213,8 +213,8 @@ function sgRender() {
 
   // Draw search path edges (highlighted)
   pathEdges.forEach(function(edge) {
-    var fromNode = sgState.nodes.find(function(n){ return n.key === edge.fromKey; });
-    var toNode   = sgState.nodes.find(function(n){ return n.key === edge.toKey; });
+    let fromNode = sgState.nodes.find(function(n){ return n.key === edge.fromKey; });
+    let toNode   = sgState.nodes.find(function(n){ return n.key === edge.toKey; });
     if (!fromNode || !toNode) return;
 
     ctx.beginPath();
@@ -223,10 +223,10 @@ function sgRender() {
     ctx.stroke();
 
     // Arrow head
-    var dx = toNode.x - fromNode.x; var dy = toNode.y - fromNode.y;
-    var len = Math.sqrt(dx*dx+dy*dy) || 1;
-    var ux = dx/len; var uy = dy/len;
-    var ax = toNode.x - ux*22; var ay = toNode.y - uy*22;
+    let dx = toNode.x - fromNode.x; let dy = toNode.y - fromNode.y;
+    let len = Math.sqrt(dx*dx+dy*dy) || 1;
+    let ux = dx/len; let uy = dy/len;
+    let ax = toNode.x - ux*22; let ay = toNode.y - uy*22;
     ctx.beginPath();
     ctx.moveTo(ax - uy*6, ay + ux*6);
     ctx.lineTo(toNode.x - ux*SG_NODE_R, toNode.y - uy*SG_NODE_R);
@@ -236,12 +236,12 @@ function sgRender() {
 
   // Draw nodes
   sgState.nodes.forEach(function(node) {
-    var isAlive  = node.alive;
-    var isPath   = pathNodeKeys[node.key];
-    var isStart  = sgState.searchStart === node.key;
-    var isTarget = sgState.searchTarget === node.key;
+    let isAlive  = node.alive;
+    let isPath   = pathNodeKeys[node.key];
+    let isStart  = sgState.searchStart === node.key;
+    let isTarget = sgState.searchTarget === node.key;
 
-    var fillColor, strokeColor, lineWidth;
+    let fillColor, strokeColor, lineWidth;
 
     if (!isAlive) {
       fillColor = 'rgba(239,68,68,0.12)'; strokeColor = '#ef4444'; lineWidth = 1.5;
@@ -275,10 +275,10 @@ function sgRender() {
 
     // Level indicator (small text below)
     if (isAlive) {
-      var maxLevel = 0;
-      for (var lv = sgState.mvBits; lv >= 1; lv--) {
-        var prefix = node.mv.substring(0, lv);
-        var count = sgState.nodes.filter(function(n){ return n.alive && n.mv.substring(0,lv) === prefix; }).length;
+      let maxLevel = 0;
+      for (let lv = sgState.mvBits; lv >= 1; lv--) {
+        let prefix = node.mv.substring(0, lv);
+        let count = sgState.nodes.filter(function(n){ return n.alive && n.mv.substring(0,lv) === prefix; }).length;
         if (count >= 2) { maxLevel = lv; break; }
       }
       ctx.fillStyle = 'rgba(148,163,184,0.4)';
@@ -288,8 +288,8 @@ function sgRender() {
   });
 
   // Level ring labels
-  for (var level = 1; level <= Math.min(sgState.mvBits, 3); level++) {
-    var ringR2 = r0 * (1 - level * (0.18 / sgState.mvBits));
+  for (let level = 1; level <= Math.min(sgState.mvBits, 3); level++) {
+    let ringR2 = r0 * (1 - level * (0.18 / sgState.mvBits));
     if (ringR2 < 40) break;
     ctx.fillStyle = level === 1 ? 'rgba(168,85,247,0.5)' : level === 2 ? 'rgba(34,197,94,0.5)' : 'rgba(245,158,11,0.5)';
     ctx.font = '9px Poppins,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -299,21 +299,21 @@ function sgRender() {
 
 /* ─── Handle canvas click ─── */
 function sgHandleCanvasClick(e) {
-  var canvas = document.getElementById('sgCanvas');
+  let canvas = document.getElementById('sgCanvas');
   if (!canvas) return;
-  var rect = canvas.getBoundingClientRect();
-  var mx = e.clientX - rect.left;
-  var my = e.clientY - rect.top;
+  let rect = canvas.getBoundingClientRect();
+  let mx = e.clientX - rect.left;
+  let my = e.clientY - rect.top;
 
   // Scale for devicePixelRatio / CSS sizing
-  var scaleX = canvas.width / rect.width;
-  var scaleY = canvas.height / rect.height;
+  let scaleX = canvas.width / rect.width;
+  let scaleY = canvas.height / rect.height;
   mx *= scaleX; my *= scaleY;
 
   // Find clicked node
-  var clicked = null;
+  let clicked = null;
   sgState.nodes.forEach(function(node) {
-    var dx = node.x - mx; var dy = node.y - my;
+    let dx = node.x - mx; let dy = node.y - my;
     if (Math.sqrt(dx*dx+dy*dy) <= SG_NODE_R + 4) clicked = node;
   });
 
@@ -346,8 +346,8 @@ function sgHandleCanvasClick(e) {
   // Search tool
   if (!clicked.alive) { sgSetStatus('Node ' + clicked.key + ' is dead — choose an alive node to start search.', 'notfound'); return; }
 
-  var targetInput = document.getElementById('sgSearchTarget');
-  var target = targetInput ? parseInt(targetInput.value) : null;
+  let targetInput = document.getElementById('sgSearchTarget');
+  let target = targetInput ? parseInt(targetInput.value) : null;
   if (!target || isNaN(target)) {
     sgSetStatus('Enter a target key in the "Search target" field, then click a node to start from.', '');
     return;
@@ -360,7 +360,7 @@ function sgHandleCanvasClick(e) {
   sgRender();
   sgRenderTrace();
 
-  var lastStep = sgState.searchPath[sgState.searchPath.length - 1];
+  let lastStep = sgState.searchPath[sgState.searchPath.length - 1];
   if (lastStep && lastStep.type === 'found') {
     sgSetStatus('✅ Found key ' + target + '! Search started from node ' + clicked.key + ' — ' + sgState.searchPath.filter(function(s){return s.type==='move';}).length + ' hop(s).', 'found');
   } else {
@@ -370,7 +370,7 @@ function sgHandleCanvasClick(e) {
 
 /* ─── Render search trace ─── */
 function sgRenderTrace() {
-  var log = document.getElementById('sgTraceLog');
+  let log = document.getElementById('sgTraceLog');
   if (!log) return;
   log.innerHTML = sgState.searchPath.map(function(step) {
     if (step.type === 'start') return '<div class="sg-trace-entry start">Start at node ' + step.key + '</div>';
@@ -383,7 +383,7 @@ function sgRenderTrace() {
 
 /* ─── Clear trace ─── */
 function sgClearTrace() {
-  var log = document.getElementById('sgTraceLog');
+  let log = document.getElementById('sgTraceLog');
   if (log) log.innerHTML = '<div class="sg-trace-empty">No search yet. Click a node to start.</div>';
   sgState.searchPath  = [];
   sgState.searchStart = null;
@@ -392,17 +392,17 @@ function sgClearTrace() {
 
 /* ─── Update MV table ─── */
 function sgUpdateMvTable() {
-  var tbody = document.getElementById('sgMvBody');
+  let tbody = document.getElementById('sgMvBody');
   if (!tbody) return;
   tbody.innerHTML = sgState.nodes.map(function(node) {
-    var maxLevel = 0;
-    for (var lv = sgState.mvBits; lv >= 1; lv--) {
+    let maxLevel = 0;
+    for (let lv = sgState.mvBits; lv >= 1; lv--) {
       if (!node.alive) break;
-      var prefix = node.mv.substring(0, lv);
-      var count = sgState.nodes.filter(function(n){ return n.alive && n.mv.substring(0,lv) === prefix; }).length;
+      let prefix = node.mv.substring(0, lv);
+      let count = sgState.nodes.filter(function(n){ return n.alive && n.mv.substring(0,lv) === prefix; }).length;
       if (count >= 2) { maxLevel = lv; break; }
     }
-    var isPath = sgState.searchPath.some(function(s){ return s.fromKey === node.key || s.toKey === node.key || s.key === node.key; });
+    let isPath = sgState.searchPath.some(function(s){ return s.fromKey === node.key || s.toKey === node.key || s.key === node.key; });
     return '<tr class="' + (!node.alive ? 'sg-mv-dead' : isPath ? 'sg-mv-active' : '') + '">' +
       '<td>' + node.key + '</td>' +
       '<td>' + node.mv + '</td>' +
@@ -414,13 +414,13 @@ function sgUpdateMvTable() {
 
 /* ─── Update fault stats ─── */
 function sgUpdateFaultStats() {
-  var total = sgState.nodes.length;
-  var dead  = sgState.nodes.filter(function(n){ return !n.alive; }).length;
-  var alive = total - dead;
+  let total = sgState.nodes.length;
+  let dead  = sgState.nodes.filter(function(n){ return !n.alive; }).length;
+  let alive = total - dead;
 
-  var tEl = document.getElementById('sgTotal');
-  var dEl = document.getElementById('sgDead');
-  var rEl = document.getElementById('sgReachable');
+  let tEl = document.getElementById('sgTotal');
+  let dEl = document.getElementById('sgDead');
+  let rEl = document.getElementById('sgReachable');
   if (tEl) tEl.textContent = total;
   if (dEl) dEl.textContent = dead;
   if (rEl) rEl.textContent = alive + ' / ' + total + (dead > 0 ? ' (skip graph still functional from any alive node)' : '');
@@ -428,7 +428,7 @@ function sgUpdateFaultStats() {
 
 /* ─── Status ─── */
 function sgSetStatus(msg, cls) {
-  var el = document.getElementById('sgStatus');
+  let el = document.getElementById('sgStatus');
   if (!el) return;
   el.textContent = msg;
   el.className = 'sg-status ' + (cls || '');
@@ -437,7 +437,7 @@ function sgSetStatus(msg, cls) {
 /* ─── Init ─── */
 function sgInit() {
   // Generate button
-  var genBtn = document.getElementById('sgGenerateBtn');
+  let genBtn = document.getElementById('sgGenerateBtn');
   if (genBtn) genBtn.addEventListener('click', sgGenerate);
 
   // Tool buttons
@@ -446,17 +446,17 @@ function sgInit() {
       document.querySelectorAll('.sg-tool-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       sgState.tool = btn.getAttribute('data-tool');
-      var searchRow = document.getElementById('sgSearchRow');
+      let searchRow = document.getElementById('sgSearchRow');
       if (searchRow) searchRow.style.display = sgState.tool === 'search' ? '' : 'none';
     });
   });
 
   // Canvas click
-  var canvas = document.getElementById('sgCanvas');
+  let canvas = document.getElementById('sgCanvas');
   if (canvas) canvas.addEventListener('click', sgHandleCanvasClick);
 
   // Reset highlights
-  var resetBtn = document.getElementById('sgResetSearchBtn');
+  let resetBtn = document.getElementById('sgResetSearchBtn');
   if (resetBtn) resetBtn.addEventListener('click', function() {
     sgClearTrace();
     sgRender();
@@ -465,7 +465,7 @@ function sgInit() {
   });
 
   // Enter key on target input
-  var targetInput = document.getElementById('sgSearchTarget');
+  let targetInput = document.getElementById('sgSearchTarget');
   if (targetInput) targetInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') sgSetStatus('Now click any alive node to start the search from it.');
   });

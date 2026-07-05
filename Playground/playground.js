@@ -29,9 +29,9 @@
     <script>
       (function() {
         try {
-          var storedTheme = localStorage.getItem('theme');
-          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-          var theme = storedTheme || (prefersLight ? 'light' : 'dark');
+          let storedTheme = localStorage.getItem('theme');
+          let prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          let theme = storedTheme || (prefersLight ? 'light' : 'dark');
           if (theme === 'light') {
             document.documentElement.classList.add('light-mode');
           } else {

@@ -3,11 +3,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* ─── Thread colors ─── */
-var LF_THREAD_COLORS = ['#22c55e','#06b6d4','#a855f7','#f59e0b'];
-var LF_THREAD_COLOR_RGB = ['34,197,94','6,182,212','168,85,247','245,158,11'];
+let LF_THREAD_COLORS = ['#22c55e','#06b6d4','#a855f7','#f59e0b'];
+let LF_THREAD_COLOR_RGB = ['34,197,94','6,182,212','168,85,247','245,158,11'];
 
 /* ─── State ─── */
-var lfState = {
+let lfState = {
   struct      : 'stack',
   numThreads  : 3,
   initialized : false,
@@ -32,8 +32,8 @@ var lfState = {
 
 /* ─── Node helpers ─── */
 function lfNewNode(value) {
-  var id = lfState.nextNodeId++;
-  var node = { id: id, value: value, next: null, freed: false };
+  let id = lfState.nextNodeId++;
+  let node = { id: id, value: value, next: null, freed: false };
   lfState.nodes.push(node);
   return id;
 }
@@ -42,7 +42,7 @@ function lfGetNode(id) { return lfState.nodes.find(function(n){ return n.id === 
 
 /* ─── Initialize ─── */
 function lfInitialize() {
-  var n = parseInt(document.getElementById('lfThreadCount').value) || 3;
+  let n = parseInt(document.getElementById('lfThreadCount').value) || 3;
   lfState.numThreads   = n;
   lfState.nodes        = [];
   lfState.head         = null;
@@ -55,21 +55,21 @@ function lfInitialize() {
   lfState.abaStep      = -1;
 
   // Pre-populate with 3 values for demo
-  var preValues = [30, 20, 10];
+  let preValues = [30, 20, 10];
   if (lfState.struct === 'stack') {
     preValues.forEach(function(v) {
-      var id = lfNewNode(v);
-      var node = lfGetNode(id);
+      let id = lfNewNode(v);
+      let node = lfGetNode(id);
       node.next = lfState.head;
       lfState.head = id;
     });
   } else {
     // Queue: head is a sentinel node
-    var sentinelId = lfNewNode(null);
+    let sentinelId = lfNewNode(null);
     lfState.head = sentinelId;
     lfState.tail = sentinelId;
     preValues.forEach(function(v) {
-      var newId = lfNewNode(v);
+      let newId = lfNewNode(v);
       lfGetNode(lfState.tail).next = newId;
       lfState.tail = newId;
     });
@@ -77,7 +77,7 @@ function lfInitialize() {
 
   // Build threads
   lfState.threads = [];
-  for (var i = 0; i < n; i++) {
+  for (let i = 0; i < n; i++) {
     lfState.threads.push({
       id          : i,
       color       : LF_THREAD_COLORS[i],
@@ -100,18 +100,18 @@ function lfInitialize() {
 
 /* ─── Build thread panels ─── */
 function lfBuildThreadPanels() {
-  var col = document.getElementById('lfThreadsCol');
+  let col = document.getElementById('lfThreadsCol');
   if (!col) return;
   col.innerHTML = '';
 
   lfState.threads.forEach(function(thread) {
-    var panel = document.createElement('div');
+    let panel = document.createElement('div');
     panel.className = 'lf-thread-panel';
     panel.style.setProperty('--tc', thread.color);
     panel.style.setProperty('--tc-rgb', thread.colorRgb);
     panel.setAttribute('id', 'lfThread' + thread.id);
 
-    var opOptions = lfState.struct === 'stack'
+    let opOptions = lfState.struct === 'stack'
       ? '<option value="push">push</option><option value="pop">pop</option>'
       : '<option value="enqueue">enqueue</option><option value="dequeue">dequeue</option>';
 
@@ -136,9 +136,9 @@ function lfBuildThreadPanels() {
 
     // Wire queue button
     (function(tid) {
-      var qBtn = document.getElementById('lfQueueBtn' + tid);
+      let qBtn = document.getElementById('lfQueueBtn' + tid);
       if (qBtn) qBtn.addEventListener('click', function() { lfQueueOp(tid); });
-      var stepBtn = document.getElementById('lfStepBtn' + tid);
+      let stepBtn = document.getElementById('lfStepBtn' + tid);
       if (stepBtn) stepBtn.addEventListener('click', function() { lfStepThread(tid); });
     })(thread.id);
   });
@@ -146,12 +146,12 @@ function lfBuildThreadPanels() {
 
 /* ─── Queue an operation for a thread ─── */
 function lfQueueOp(tid) {
-  var thread = lfState.threads[tid];
+  let thread = lfState.threads[tid];
   if (!thread) return;
-  var opSel = document.getElementById('lfOpSel' + tid);
-  var valIn = document.getElementById('lfOpVal' + tid);
-  var op    = opSel ? opSel.value : 'push';
-  var val   = parseInt(valIn ? valIn.value : 0);
+  let opSel = document.getElementById('lfOpSel' + tid);
+  let valIn = document.getElementById('lfOpVal' + tid);
+  let op    = opSel ? opSel.value : 'push';
+  let val   = parseInt(valIn ? valIn.value : 0);
   if (isNaN(val) || val < 1) val = tid * 10 + 10;
 
   thread.pendingOps.push({ op: op, value: val });
@@ -159,25 +159,25 @@ function lfQueueOp(tid) {
 }
 
 function lfRenderPendingOps(tid) {
-  var thread = lfState.threads[tid];
-  var el = document.getElementById('lfPending' + tid);
+  let thread = lfState.threads[tid];
+  let el = document.getElementById('lfPending' + tid);
   if (!el) return;
   if (thread.pendingOps.length === 0) { el.innerHTML = ''; return; }
   el.innerHTML = thread.pendingOps.map(function(op) {
-    var label = op.op + (op.op === 'push' || op.op === 'enqueue' ? '(' + op.value + ')' : '()');
+    let label = op.op + (op.op === 'push' || op.op === 'enqueue' ? '(' + op.value + ')' : '()');
     return '<span class="lf-pending-op">' + label + '</span>';
   }).join('');
 }
 
 /* ─── Step one thread ─── */
 function lfStepThread(tid) {
-  var thread = lfState.threads[tid];
+  let thread = lfState.threads[tid];
   if (!thread || thread.pendingOps.length === 0) {
     lfSetStatus('T' + (tid+1) + ' has no pending operations. Add some using the + Queue button.', '');
     return;
   }
 
-  var pending = thread.pendingOps[0];
+  let pending = thread.pendingOps[0];
 
   if (lfState.struct === 'stack') {
     if (pending.op === 'push') lfStackPush(tid, pending.value);
@@ -198,16 +198,16 @@ function lfStepThread(tid) {
 
 /* ─── Treiber Stack: push ─── */
 function lfStackPush(tid, value) {
-  var thread = lfState.threads[tid];
+  let thread = lfState.threads[tid];
 
   // Phase 1: Read head
-  var observedHead = lfState.head;
+  let observedHead = lfState.head;
   thread.readHead = observedHead;
   thread.status = 'reading';
   lfAddCasLog('read', 'T' + (tid+1) + ' reads head → ' + (observedHead !== null ? 'node#' + observedHead + '(val=' + lfGetNode(observedHead).value + ')' : 'null'));
 
   // Phase 2: Create new node
-  var newId = lfNewNode(value);
+  let newId = lfNewNode(value);
   lfGetNode(newId).next = observedHead;
 
   // Phase 3: CAS(head, observedHead, newId)
@@ -231,8 +231,8 @@ function lfStackPush(tid, value) {
     thread.status = 'done';
   }
 
-  var dokEl = document.getElementById('lfTOk' + tid);
-  var dfailEl = document.getElementById('lfTFail' + tid);
+  let dokEl = document.getElementById('lfTOk' + tid);
+  let dfailEl = document.getElementById('lfTFail' + tid);
   if (dokEl) dokEl.textContent = thread.casAttempts - thread.casFailures;
   if (dfailEl) dfailEl.textContent = thread.casFailures;
   lfUpdateDot(tid);
@@ -240,7 +240,7 @@ function lfStackPush(tid, value) {
 
 /* ─── Treiber Stack: pop ─── */
 function lfStackPop(tid) {
-  var thread = lfState.threads[tid];
+  let thread = lfState.threads[tid];
 
   if (lfState.head === null) {
     lfSetStatus('T' + (tid+1) + ' tried to pop — stack is empty.', '');
@@ -248,9 +248,9 @@ function lfStackPop(tid) {
   }
 
   // Phase 1: Read head
-  var observedHead = lfState.head;
+  let observedHead = lfState.head;
   thread.readHead = observedHead;
-  var headNode = lfGetNode(observedHead);
+  let headNode = lfGetNode(observedHead);
   if (!headNode) return;
 
   // Hazard pointer: protect this node
@@ -259,7 +259,7 @@ function lfStackPop(tid) {
   thread.status = 'reading';
   lfAddCasLog('read', 'T' + (tid+1) + ' reads head → #' + observedHead + '(val=' + headNode.value + ')');
 
-  var newHead = headNode.next;
+  let newHead = headNode.next;
 
   // Phase 2: CAS(head, observedHead, newHead)
   lfState.casAttempts++; thread.casAttempts++;
@@ -271,7 +271,7 @@ function lfStackPop(tid) {
     // Try to reclaim freed node
     if (lfState.hazardOn) {
       // Check if any thread still holds a hazard ptr to this node
-      var stillProtected = lfState.threads.some(function(t) { return t.hazardPtr === observedHead; });
+      let stillProtected = lfState.threads.some(function(t) { return t.hazardPtr === observedHead; });
       if (stillProtected) {
         lfState.limbo.push({ id: observedHead, value: headNode.value, freedBy: tid+1 });
         lfAddCasLog('read', 'T' + (tid+1) + ' ✅ pop ' + headNode.value + '. Node #' + observedHead + ' → limbo (hazard protected by another thread)');
@@ -295,8 +295,8 @@ function lfStackPop(tid) {
     thread.status = 'idle';
   }
 
-  var dokEl = document.getElementById('lfTOk' + tid);
-  var dfailEl = document.getElementById('lfTFail' + tid);
+  let dokEl = document.getElementById('lfTOk' + tid);
+  let dfailEl = document.getElementById('lfTFail' + tid);
   if (dokEl) dokEl.textContent = thread.casAttempts - thread.casFailures;
   if (dfailEl) dfailEl.textContent = thread.casFailures;
   lfUpdateDot(tid);
@@ -304,14 +304,14 @@ function lfStackPop(tid) {
 
 /* ─── Michael-Scott Queue: enqueue ─── */
 function lfQueueEnqueue(tid, value) {
-  var thread = lfState.threads[tid];
-  var newId = lfNewNode(value);
+  let thread = lfState.threads[tid];
+  let newId = lfNewNode(value);
 
   lfAddCasLog('read', 'T' + (tid+1) + ' reads tail → #' + lfState.tail);
 
   lfState.casAttempts++; thread.casAttempts++;
   // CAS tail.next from null to newId
-  var tailNode = lfGetNode(lfState.tail);
+  let tailNode = lfGetNode(lfState.tail);
   if (tailNode && tailNode.next === null) {
     tailNode.next = newId;
     lfState.tail = newId;
@@ -331,8 +331,8 @@ function lfQueueEnqueue(tid, value) {
     thread.status = 'done';
   }
 
-  var dokEl = document.getElementById('lfTOk' + tid);
-  var dfailEl = document.getElementById('lfTFail' + tid);
+  let dokEl = document.getElementById('lfTOk' + tid);
+  let dfailEl = document.getElementById('lfTFail' + tid);
   if (dokEl) dokEl.textContent = thread.casAttempts - thread.casFailures;
   if (dfailEl) dfailEl.textContent = thread.casFailures;
   lfUpdateDot(tid);
@@ -340,26 +340,26 @@ function lfQueueEnqueue(tid, value) {
 
 /* ─── Michael-Scott Queue: dequeue ─── */
 function lfQueueDequeue(tid) {
-  var thread = lfState.threads[tid];
-  var headNode = lfGetNode(lfState.head);
+  let thread = lfState.threads[tid];
+  let headNode = lfGetNode(lfState.head);
   if (!headNode || headNode.next === null) {
     lfSetStatus('T' + (tid+1) + ' tried to dequeue — queue is empty.', '');
     return;
   }
 
   lfAddCasLog('read', 'T' + (tid+1) + ' reads head.next → #' + headNode.next);
-  var nextNode = lfGetNode(headNode.next);
-  var nextId   = headNode.next;
+  let nextNode = lfGetNode(headNode.next);
+  let nextId   = headNode.next;
 
   if (lfState.hazardOn) thread.hazardPtr = headNode.id;
 
   lfState.casAttempts++; thread.casAttempts++;
   // CAS head from current to head.next
   if (lfState.head === headNode.id) {
-    var value = nextNode.value;
+    let value = nextNode.value;
     lfState.head = nextId;
     if (lfState.hazardOn) {
-      var stillProtected = lfState.threads.some(function(t){ return t.hazardPtr === headNode.id; });
+      let stillProtected = lfState.threads.some(function(t){ return t.hazardPtr === headNode.id; });
       if (stillProtected) {
         lfState.limbo.push({ id: headNode.id, value: 'sentinel#' + headNode.id, freedBy: tid+1 });
       } else {
@@ -381,8 +381,8 @@ function lfQueueDequeue(tid) {
     thread.status = 'idle';
   }
 
-  var dokEl = document.getElementById('lfTOk' + tid);
-  var dfailEl = document.getElementById('lfTFail' + tid);
+  let dokEl = document.getElementById('lfTOk' + tid);
+  let dfailEl = document.getElementById('lfTFail' + tid);
   if (dokEl) dokEl.textContent = thread.casAttempts - thread.casFailures;
   if (dfailEl) dfailEl.textContent = thread.casFailures;
   lfUpdateDot(tid);
@@ -390,22 +390,22 @@ function lfQueueDequeue(tid) {
 
 /* ─── Render data structure canvas ─── */
 function lfRenderDs() {
-  var canvas = document.getElementById('lfDsCanvas');
+  let canvas = document.getElementById('lfDsCanvas');
   if (!canvas) return;
-  var wrap = document.getElementById('lfDsCanvasWrap');
-  var W = Math.max(wrap ? wrap.clientWidth : 500, 400);
-  var H = 300;
+  let wrap = document.getElementById('lfDsCanvasWrap');
+  let W = Math.max(wrap ? wrap.clientWidth : 500, 400);
+  let H = 300;
   canvas.width = W; canvas.height = H;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
   // Collect live nodes in order
-  var chain = [];
-  var visited = {};
-  var cur = lfState.head;
-  var safety = 0;
+  let chain = [];
+  let visited = {};
+  let cur = lfState.head;
+  let safety = 0;
   while (cur !== null && !visited[cur] && safety++ < 50) {
-    var node = lfGetNode(cur);
+    let node = lfGetNode(cur);
     if (!node || node.freed) break;
     chain.push(node);
     visited[cur] = true;
@@ -423,27 +423,27 @@ function lfRenderDs() {
   ctx.fillStyle = 'rgba(148,163,184,0.5)'; ctx.font = 'bold 9px Poppins,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.fillText(lfState.struct === 'stack' ? 'TOP →' : 'HEAD →', 10, 8);
 
-  var boxW = 60; var boxH = 36; var spacing = 80;
-  var startX = 50; var nodeY = H/2 - boxH/2;
+  let boxW = 60; let boxH = 36; let spacing = 80;
+  let startX = 50; let nodeY = H/2 - boxH/2;
 
   // Identify nodes being held by threads
-  var threadHolding = {};
+  let threadHolding = {};
   lfState.threads.forEach(function(t) {
     if (t.readHead !== null) threadHolding[t.readHead] = t;
     if (t.hazardPtr !== null) threadHolding[t.hazardPtr] = t;
   });
 
   chain.forEach(function(node, i) {
-    var x = startX + i * spacing;
+    let x = startX + i * spacing;
     if (x + boxW > W - 20) return; // clip overflow
 
-    var isHeld  = threadHolding[node.id];
-    var isTail  = lfState.struct === 'queue' && node.id === lfState.tail;
-    var isHead  = i === 0;
-    var isHazard = lfState.hazardOn && lfState.threads.some(function(t){ return t.hazardPtr === node.id; });
+    let isHeld  = threadHolding[node.id];
+    let isTail  = lfState.struct === 'queue' && node.id === lfState.tail;
+    let isHead  = i === 0;
+    let isHazard = lfState.hazardOn && lfState.threads.some(function(t){ return t.hazardPtr === node.id; });
 
-    var fillColor   = isHazard ? 'rgba(168,85,247,0.25)' : isHeld ? 'rgba(245,158,11,0.2)' : 'rgba(6,182,212,0.15)';
-    var strokeColor = isHazard ? '#a855f7' : isHeld ? '#f59e0b' : '#06b6d4';
+    let fillColor   = isHazard ? 'rgba(168,85,247,0.25)' : isHeld ? 'rgba(245,158,11,0.2)' : 'rgba(6,182,212,0.15)';
+    let strokeColor = isHazard ? '#a855f7' : isHeld ? '#f59e0b' : '#06b6d4';
 
     // Box
     ctx.fillStyle = fillColor;
@@ -456,7 +456,7 @@ function lfRenderDs() {
     // Value
     ctx.fillStyle = strokeColor;
     ctx.font = 'bold 13px Fira Code,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    var displayVal = node.value !== null ? String(node.value) : 'S'; // S for sentinel
+    let displayVal = node.value !== null ? String(node.value) : 'S'; // S for sentinel
     ctx.fillText(displayVal, x + boxW/2, nodeY + boxH/2 - 4);
 
     // Node id
@@ -465,8 +465,8 @@ function lfRenderDs() {
 
     // Arrow to next
     if (node.next !== null && i < chain.length - 1) {
-      var ax = x + boxW + 2; var ay = nodeY + boxH/2;
-      var bx = x + spacing - 4;
+      let ax = x + boxW + 2; let ay = nodeY + boxH/2;
+      let bx = x + spacing - 4;
       ctx.strokeStyle = 'rgba(148,163,184,0.4)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, ay); ctx.stroke();
       ctx.fillStyle = 'rgba(148,163,184,0.4)';
@@ -482,7 +482,7 @@ function lfRenderDs() {
 
     // Thread reading indicator
     if (isHeld) {
-      var t = threadHolding[node.id];
+      let t = threadHolding[node.id];
       ctx.fillStyle = t.color;
       ctx.font = 'bold 8px Fira Code,monospace'; ctx.textAlign = 'center';
       ctx.fillText('T' + (t.id+1) + ' reads', x + boxW/2, nodeY - 10);
@@ -490,18 +490,18 @@ function lfRenderDs() {
   });
 
   // Draw null pointer for last
-  var size = document.getElementById('lfDsSize');
+  let size = document.getElementById('lfDsSize');
   if (size) size.textContent = lfState.struct === 'queue' ? Math.max(0, chain.length - 1) : chain.length;
 }
 
 /* ─── Hazard table ─── */
 function lfUpdateHazardTable() {
-  var tbody = document.getElementById('lfHazardBody');
+  let tbody = document.getElementById('lfHazardBody');
   if (!tbody) return;
   tbody.innerHTML = lfState.threads.map(function(t) {
-    var hp = t.hazardPtr;
-    var node = hp !== null ? lfGetNode(hp) : null;
-    var isActive = hp !== null;
+    let hp = t.hazardPtr;
+    let node = hp !== null ? lfGetNode(hp) : null;
+    let isActive = hp !== null;
     return '<tr class="' + (isActive ? 'lf-haz-active' : '') + '">' +
       '<td>T' + (t.id+1) + '</td>' +
       '<td>' + (hp !== null ? '#' + hp : '—') + '</td>' +
@@ -512,14 +512,14 @@ function lfUpdateHazardTable() {
 
 /* ─── Limbo list ─── */
 function lfUpdateLimbo() {
-  var el = document.getElementById('lfLimboList');
+  let el = document.getElementById('lfLimboList');
   if (!el) return;
 
   // Try to reclaim any limbo nodes no longer hazard-protected
   lfState.limbo = lfState.limbo.filter(function(li) {
-    var stillProtected = lfState.threads.some(function(t){ return t.hazardPtr === li.id; });
+    let stillProtected = lfState.threads.some(function(t){ return t.hazardPtr === li.id; });
     if (!stillProtected) {
-      var node = lfGetNode(li.id);
+      let node = lfGetNode(li.id);
       if (node) node.freed = true;
       lfAddCasLog('ok', 'Limbo node #' + li.id + ' reclaimed (no more hazard ptrs)');
       return false;
@@ -535,17 +535,17 @@ function lfUpdateLimbo() {
 
 /* ─── Metrics ─── */
 function lfUpdateMetrics() {
-  var att = document.getElementById('lfCasAttempts');
-  var fail = document.getElementById('lfCasFailures');
+  let att = document.getElementById('lfCasAttempts');
+  let fail = document.getElementById('lfCasFailures');
   if (att)  att.textContent  = lfState.casAttempts;
   if (fail) fail.textContent = lfState.casFailures;
 }
 
 /* ─── Dot status ─── */
 function lfUpdateDot(tid) {
-  var dot = document.getElementById('lfDot' + tid);
+  let dot = document.getElementById('lfDot' + tid);
   if (!dot) return;
-  var thread = lfState.threads[tid];
+  let thread = lfState.threads[tid];
   dot.className = 'lf-thread-status-dot ' + (thread.status === 'idle' ? 'idle' : thread.status === 'retrying' ? 'retrying' : '');
   setTimeout(function() {
     thread.status = 'idle'; dot.className = 'lf-thread-status-dot idle';
@@ -554,11 +554,11 @@ function lfUpdateDot(tid) {
 
 /* ─── CAS log ─── */
 function lfAddCasLog(type, msg) {
-  var log = document.getElementById('lfCasLog');
+  let log = document.getElementById('lfCasLog');
   if (!log) return;
-  var empty = log.querySelector('.lf-log-empty');
+  let empty = log.querySelector('.lf-log-empty');
   if (empty) empty.remove();
-  var entry = document.createElement('div');
+  let entry = document.createElement('div');
   entry.className = 'lf-cas-entry ' + type;
   entry.textContent = msg;
   log.insertBefore(entry, log.firstChild);
@@ -567,21 +567,21 @@ function lfAddCasLog(type, msg) {
 
 /* ─── Status ─── */
 function lfSetStatus(msg, cls) {
-  var el = document.getElementById('lfStatus');
+  let el = document.getElementById('lfStatus');
   if (!el) return;
   el.textContent = msg; el.className = 'lf-status ' + (cls || '');
 }
 
 /* ─── ABA Demo ─── */
-var lfAbaState = { step: -1, hazardOn: false };
+let lfAbaState = { step: -1, hazardOn: false };
 
 function lfAbaStep() {
   lfAbaState.step++;
   if (lfAbaState.step > 3) lfAbaState.step = 3;
 
-  var steps = ['lfAba0','lfAba1','lfAba2','lfAba3'];
+  let steps = ['lfAba0','lfAba1','lfAba2','lfAba3'];
   steps.forEach(function(id, i) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('active','done','danger','safe','pending');
     if (i < lfAbaState.step)       el.classList.add('done');
@@ -590,13 +590,13 @@ function lfAbaStep() {
   });
 
   // Update step 4 text depending on hazard state
-  var s4 = document.getElementById('lfAbaStep4Text');
+  let s4 = document.getElementById('lfAbaStep4Text');
   if (s4) s4.textContent = lfState.hazardOn
     ? 'WITH hazard pointers: T1 had a hazard pointer on A. B was in limbo, not freed. T1\'s CAS succeeds but B is still valid. ✅ No use-after-free.'
     : 'WITHOUT hazard pointers: B was freed → accessing it is use-after-free. 💥 Crash or silent data corruption.';
 
   // Update hazard badge
-  var badge = document.getElementById('lfAbaHazardBadge');
+  let badge = document.getElementById('lfAbaHazardBadge');
   if (badge) {
     badge.textContent = 'Hazard Pointers: ' + (lfState.hazardOn ? 'ON' : 'OFF');
     badge.className = 'lf-hazard-badge' + (lfState.hazardOn ? ' on' : '');
@@ -607,24 +607,24 @@ function lfAbaStep() {
 
 function lfAbaReset() {
   lfAbaState.step = -1;
-  var steps = ['lfAba0','lfAba1','lfAba2','lfAba3'];
+  let steps = ['lfAba0','lfAba1','lfAba2','lfAba3'];
   steps.forEach(function(id) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     if (el) { el.className = 'lf-aba-step pending'; }
   });
   lfDrawAbaCanvas(-1);
 }
 
 function lfDrawAbaCanvas(step) {
-  var canvas = document.getElementById('lfAbaCanvas');
+  let canvas = document.getElementById('lfAbaCanvas');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 280;
   canvas.height = 200;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var W = canvas.width; var H = canvas.height;
-  var bw = 50; var bh = 32; var gap = 20;
+  let W = canvas.width; let H = canvas.height;
+  let bw = 50; let bh = 32; let gap = 20;
 
   function drawNode(x, y, label, id, color, crossed) {
     ctx.fillStyle = 'rgba(' + color + ',0.2)'; ctx.strokeStyle = 'rgb(' + color + ')'; ctx.lineWidth = 1.8;
@@ -644,24 +644,24 @@ function lfDrawAbaCanvas(step) {
   function drawArrow(x1, y1, x2, y2, color) {
     ctx.strokeStyle = color; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    var dx = x2-x1; var dy = y2-y1; var len = Math.sqrt(dx*dx+dy*dy)||1;
-    var ux = dx/len; var uy = dy/len;
+    let dx = x2-x1; let dy = y2-y1; let len = Math.sqrt(dx*dx+dy*dy)||1;
+    let ux = dx/len; let uy = dy/len;
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-ux*8-uy*4, y2-uy*8+ux*4); ctx.lineTo(x2-ux*8+uy*4, y2-uy*8-ux*4); ctx.fill();
   }
 
   // Always show initial state: HEAD → A(10) → B(20) → null
-  var ax = 30; var ay = 80;
-  var bx = ax + bw + gap; var by = ay;
-  var cx2 = bx + bw + gap;
+  let ax = 30; let ay = 80;
+  let bx = ax + bw + gap; let by = ay;
+  let cx2 = bx + bw + gap;
 
   // HEAD pointer
   ctx.fillStyle = '#22c55e'; ctx.font = 'bold 9px Poppins,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText('HEAD', 4, ay + bh/2);
   drawArrow(38, ay+bh/2, ax, ay+bh/2, '#22c55e');
 
-  var aFreed = step >= 1 && !lfState.hazardOn;
-  var bFreed = step >= 1;
+  let aFreed = step >= 1 && !lfState.hazardOn;
+  let bFreed = step >= 1;
 
   drawNode(ax, ay, 'A=10', 1, '34,197,94', aFreed);
   drawNode(bx, by, 'B=20', 2, '239,68,68', bFreed);
@@ -698,8 +698,8 @@ function lfDrawAbaCanvas(step) {
 
 /* ─── Hazard toggle ─── */
 function lfHandleHazardToggle() {
-  var check = document.getElementById('lfHazardOn');
-  var stateEl = document.getElementById('lfHazardState');
+  let check = document.getElementById('lfHazardOn');
+  let stateEl = document.getElementById('lfHazardState');
   lfState.hazardOn = check.checked;
   if (stateEl) { stateEl.textContent = lfState.hazardOn ? 'ON — ABA protected' : 'OFF — ABA possible'; stateEl.className = 'lf-toggle-state' + (lfState.hazardOn ? ' on' : ''); }
 }
@@ -712,28 +712,28 @@ function lfInit() {
       document.querySelectorAll('.lf-struct-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       lfState.struct = btn.getAttribute('data-struct');
-      var title = document.getElementById('lfDsTitle');
+      let title = document.getElementById('lfDsTitle');
       if (title) title.textContent = lfState.struct === 'stack' ? 'Treiber Stack' : 'Michael-Scott Queue';
       if (lfState.initialized) lfInitialize();
     });
   });
 
   // Init/Reset
-  var initBtn  = document.getElementById('lfInitBtn');
-  var resetBtn = document.getElementById('lfResetBtn');
+  let initBtn  = document.getElementById('lfInitBtn');
+  let resetBtn = document.getElementById('lfResetBtn');
   if (initBtn)  initBtn.addEventListener('click', lfInitialize);
   if (resetBtn) resetBtn.addEventListener('click', function() {
     if (lfState.initialized) lfInitialize();
   });
 
   // Hazard toggle
-  var hazardCheck = document.getElementById('lfHazardOn');
+  let hazardCheck = document.getElementById('lfHazardOn');
   if (hazardCheck) hazardCheck.addEventListener('change', lfHandleHazardToggle);
 
   // ABA buttons
-  var abaBtn   = document.getElementById('lfAbaBtn');
-  var abaStep  = document.getElementById('lfAbaStepBtn');
-  var abaReset = document.getElementById('lfAbaResetBtn');
+  let abaBtn   = document.getElementById('lfAbaBtn');
+  let abaStep  = document.getElementById('lfAbaStepBtn');
+  let abaReset = document.getElementById('lfAbaResetBtn');
   if (abaBtn)   abaBtn.addEventListener('click', function() { lfAbaReset(); document.getElementById('lfAbaCard').scrollIntoView({ behavior: 'smooth' }); });
   if (abaStep)  abaStep.addEventListener('click', lfAbaStep);
   if (abaReset) abaReset.addEventListener('click', lfAbaReset);

@@ -64,7 +64,7 @@ if (_signupSweeper.unref) _signupSweeper.unref();
 
 // IPs of reverse-proxies / load-balancers that are allowed to set
 // X-Forwarded-For.  Add your proxy CIDRs / IPs here or populate via
-// the TRUSTED_PROXIES env var (comma-separated) at startup.
+// the TRUSTED_PROXIES env let (comma-separated) at startup.
 const TRUSTED_PROXIES = new Set(
   (process.env.TRUSTED_PROXIES || "")
     .split(",")

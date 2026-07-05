@@ -230,7 +230,7 @@ function parseTestResults(stdout, testCount) {
 }
 
 function createSandboxWorker(harnessCode) {
-  const blob = new Blob([`self.onmessage=function(e){var logs=[],origLog=console.log;console.log=function(){for(var _len=arguments.length,args=new Array(_len),_key=0;_key<_len;_key++)args[_key]=arguments[_key];logs.push(args.map(String).join(" "))};try{eval(e.data);self.postMessage({success:true,logs})}catch(error){self.postMessage({success:false,error:error.message,logs})}finally{console.log=origLog}};`], { type: "application/javascript" });
+  const blob = new Blob([`self.onmessage=function(e){let logs=[],origLog=console.log;console.log=function(){for(let _len=arguments.length,args=new Array(_len),_key=0;_key<_len;_key++)args[_key]=arguments[_key];logs.push(args.map(String).join(" "))};try{eval(e.data);self.postMessage({success:true,logs})}catch(error){self.postMessage({success:false,error:error.message,logs})}finally{console.log=origLog}};`], { type: "application/javascript" });
   const url = URL.createObjectURL(blob);
   const worker = new Worker(url);
   return { worker, url };
@@ -471,7 +471,7 @@ function genSwiftHarness(code, fn, tcs, isClass) {
   if (outType === 'int[][]') {
     s += 'func __j(_ v: [[Int]]) -> String {\n  return "[" + v.map { __j($0) }.joined(separator: ",") + "]"\n}\n';
   }
-  s += 'var __res = "["\n';
+  s += 'let __res = "["\n';
   for (let i = 0; i < tcs.length; i++) {
     if (i > 0) s += '__res += ","\n';
     s += 'do {\n';

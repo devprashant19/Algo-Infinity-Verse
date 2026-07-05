@@ -2,10 +2,10 @@ document.addEventListener('DOMContentLoaded', function() {
   svInit();
 });
 
-var SV_NS = 'http://www.w3.org/2000/svg';
+let SV_NS = 'http://www.w3.org/2000/svg';
 
 /* ─── State ─── */
-var svState = {
+let svState = {
   currentStage : 0,
   mitigation   : false,
   stage0Step   : -1,
@@ -35,13 +35,13 @@ function svGotoStage(n) {
 
   svState.currentStage = n;
 
-  var prevBtn = document.getElementById('svPrevStage');
-  var nextBtn = document.getElementById('svNextStage');
+  let prevBtn = document.getElementById('svPrevStage');
+  let nextBtn = document.getElementById('svNextStage');
   if (prevBtn) prevBtn.disabled = n === 0;
   if (nextBtn) nextBtn.disabled = n === 3;
 
   // Show mitigation bar on stages 2-3
-  var mitBar = document.getElementById('svMitigationBar');
+  let mitBar = document.getElementById('svMitigationBar');
   if (mitBar) mitBar.style.display = n >= 2 ? '' : 'none';
 
   // Draw initial canvas for current stage
@@ -52,7 +52,7 @@ function svGotoStage(n) {
 }
 
 /* ─── Stage 0: Speculative Execution animation ─── */
-var SV_S0_STEPS = [
+let SV_S0_STEPS = [
   { label: 'FETCH branch instruction from memory', reg: 'PC = 0x1004', cache: '(unchanged)', stepId: 0 },
   { label: 'PREDICT: branch predictor says → Taken', reg: 'Spec exec: array1[x] loading...', cache: 'array1[x] → cache line loaded speculatively', stepId: 1 },
   { label: 'EXECUTE: speculative read completes', reg: 'spec_val = 0x41 (secret!)', cache: 'array2[0x41 × 512] loaded into cache', stepId: 2 },
@@ -60,23 +60,23 @@ var SV_S0_STEPS = [
 ];
 
 function svDrawStage0(stepIdx) {
-  var canvas = document.getElementById('svCanvas0');
+  let canvas = document.getElementById('svCanvas0');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 220;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var W = canvas.width; var H = canvas.height;
-  var stages = ['Fetch', 'Decode', 'Execute', 'Memory', 'Writeback'];
-  var stageW = W / (stages.length + 1);
+  let W = canvas.width; let H = canvas.height;
+  let stages = ['Fetch', 'Decode', 'Execute', 'Memory', 'Writeback'];
+  let stageW = W / (stages.length + 1);
 
   // Pipeline stages
   stages.forEach(function(name, i) {
-    var x = stageW * (i + 0.5);
-    var isActive = stepIdx >= 0 && stepIdx <= i && stepIdx <= 2;
-    var isDone = stepIdx > i + 1;
-    var isRollback = stepIdx === 3 && i > 0;
+    let x = stageW * (i + 0.5);
+    let isActive = stepIdx >= 0 && stepIdx <= i && stepIdx <= 2;
+    let isDone = stepIdx > i + 1;
+    let isRollback = stepIdx === 3 && i > 0;
 
     ctx.fillStyle = isRollback ? 'rgba(239,68,68,0.25)' :
                     isActive   ? 'rgba(249,115,22,0.25)' :
@@ -86,8 +86,8 @@ function svDrawStage0(stepIdx) {
     ctx.lineWidth = isActive || isRollback ? 2.5 : 1.5;
 
     // Box
-    var bw = stageW * 0.7; var bh = 48;
-    var bx = x - bw/2; var by = H/2 - bh/2;
+    let bw = stageW * 0.7; let bh = 48;
+    let bx = x - bw/2; let by = H/2 - bh/2;
     ctx.beginPath();
     ctx.roundRect(bx, by, bw, bh, 6);
     ctx.fill(); ctx.stroke();
@@ -98,7 +98,7 @@ function svDrawStage0(stepIdx) {
 
     // Arrow
     if (i < stages.length - 1) {
-      var arrowX = x + bw/2 + 2;
+      let arrowX = x + bw/2 + 2;
       ctx.strokeStyle = isRollback ? '#ef4444' : 'rgba(148,163,184,0.3)';
       ctx.lineWidth = isRollback ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(arrowX, H/2); ctx.lineTo(arrowX + stageW*0.26, H/2); ctx.stroke();
@@ -120,9 +120,9 @@ function svDrawStage0(stepIdx) {
   }
 
   // Update side panels
-  var step = SV_S0_STEPS[stepIdx] || {};
-  var regEl = document.getElementById('svReg0');
-  var cacheEl = document.getElementById('svCache0');
+  let step = SV_S0_STEPS[stepIdx] || {};
+  let regEl = document.getElementById('svReg0');
+  let cacheEl = document.getElementById('svCache0');
   if (regEl) regEl.textContent = step.reg || '—';
   if (cacheEl) cacheEl.textContent = step.cache || '—';
 
@@ -133,7 +133,7 @@ function svDrawStage0(stepIdx) {
     else if (i === stepIdx) el.classList.add('active');
   });
 
-  var labelEl = document.getElementById('svLabel0');
+  let labelEl = document.getElementById('svLabel0');
   if (labelEl) labelEl.textContent = step.label || (stepIdx === -1 ? 'Click Play to begin' : 'Complete');
 }
 
@@ -141,7 +141,7 @@ function svPlayStage0() {
   if (svState.stage0Playing) {
     svState.stage0Playing = false;
     if (svState.stage0Timer) { clearTimeout(svState.stage0Timer); svState.stage0Timer = null; }
-    var playBtn = document.getElementById('svPlay0');
+    let playBtn = document.getElementById('svPlay0');
     if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
     return;
   }
@@ -149,7 +149,7 @@ function svPlayStage0() {
   if (svState.stage0Step >= SV_S0_STEPS.length - 1) svState.stage0Step = -1;
 
   svState.stage0Playing = true;
-  var playBtn = document.getElementById('svPlay0');
+  let playBtn = document.getElementById('svPlay0');
   if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
 
   function tick() {
@@ -168,30 +168,30 @@ function svPlayStage0() {
 }
 
 function svUpdateS0Btns() {
-  var prevBtn = document.getElementById('svPrev0');
-  var nextBtn = document.getElementById('svNext0');
+  let prevBtn = document.getElementById('svPrev0');
+  let nextBtn = document.getElementById('svNext0');
   if (prevBtn) prevBtn.disabled = svState.stage0Step <= 0;
   if (nextBtn) nextBtn.disabled = svState.stage0Step >= SV_S0_STEPS.length - 1;
 }
 
 /* ─── Stage 1: FSM + training ─── */
-var SV_FSM_STATES_LABELS = ['Strongly NT', 'Weakly NT', 'Weakly T', 'Strongly T'];
+let SV_FSM_STATES_LABELS = ['Strongly NT', 'Weakly NT', 'Weakly T', 'Strongly T'];
 
 function svDrawStage1FSM(activeState) {
-  var canvas = document.getElementById('svCanvas1');
+  let canvas = document.getElementById('svCanvas1');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 220;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var W = canvas.width; var H = canvas.height;
-  var positions = [W*0.12, W*0.37, W*0.62, W*0.87];
-  var cy = H * 0.42;
+  let W = canvas.width; let H = canvas.height;
+  let positions = [W*0.12, W*0.37, W*0.62, W*0.87];
+  let cy = H * 0.42;
 
   // Transition arrows (T = right, N = left)
-  for (var i = 0; i < 3; i++) {
-    var x1 = positions[i]; var x2 = positions[i+1];
+  for (let i = 0; i < 3; i++) {
+    let x1 = positions[i]; let x2 = positions[i+1];
     // T arrow (below, right)
     ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(x1+22, cy+10); ctx.lineTo(x2-22, cy+10);
@@ -213,7 +213,7 @@ function svDrawStage1FSM(activeState) {
 
   // Nodes
   positions.forEach(function(x, i) {
-    var isActive = i === activeState;
+    let isActive = i === activeState;
     ctx.beginPath();
     ctx.arc(x, cy, 20, 0, Math.PI*2);
     ctx.fillStyle = isActive ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.04)';
@@ -241,33 +241,33 @@ function svDrawStage1FSM(activeState) {
 }
 
 function svRunTraining() {
-  var count = 5;
+  let count = 5;
   svState.trainCount = 0;
 
-  var boxesEl = document.getElementById('svTrainBoxes');
+  let boxesEl = document.getElementById('svTrainBoxes');
   if (boxesEl) boxesEl.innerHTML = '';
 
-  var predState = document1 ? 1 : 1; // start weakly NT
+  let predState = document1 ? 1 : 1; // start weakly NT
 
   function addTrainingIteration(i) {
     if (i >= count) {
-      var predStateEl = document.getElementById('svPredState');
+      let predStateEl = document.getElementById('svPredState');
       if (predStateEl) predStateEl.textContent = 'Strongly Taken (state 3) — fully trained!';
       return;
     }
 
     // In-bounds call: branch is TAKEN → move predictor toward Strongly Taken
-    var newState = Math.min(3, predState + 1);
+    let newState = Math.min(3, predState + 1);
     predState = newState;
     svDrawStage1FSM(newState);
 
-    var box = document.createElement('div');
+    let box = document.createElement('div');
     box.className = 'sv-train-box training';
     box.textContent = 'i=' + i;
     setTimeout(function() { box.className = 'sv-train-box in-bounds'; }, 300);
     if (boxesEl) boxesEl.appendChild(box);
 
-    var predStateEl = document.getElementById('svPredState');
+    let predStateEl = document.getElementById('svPredState');
     if (predStateEl) predStateEl.textContent = SV_FSM_STATES_LABELS[newState] + ' (state ' + newState + ')';
 
     setTimeout(function() { addTrainingIteration(i+1); }, 600);
@@ -277,22 +277,22 @@ function svRunTraining() {
 }
 
 // Workaround for using document in function — just use window
-var document1 = true;
+let document1 = true;
 
 /* ─── Stage 2: OOB Read ─── */
 function svDrawStage2(step) {
-  var canvas = document.getElementById('svCanvas2');
+  let canvas = document.getElementById('svCanvas2');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 300;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var W = canvas.width; var H = canvas.height;
-  var mit = svState.mitigation;
+  let W = canvas.width; let H = canvas.height;
+  let mit = svState.mitigation;
 
   // Draw memory map
-  var regions = [
+  let regions = [
     { label: 'array1[ ]  (accessible)', color: '#06b6d4', h: 40, y: 20 },
     { label: '    x = out-of-bounds index →', color: '#f97316', h: 20, y: 65 },
     { label: 'SECRET MEMORY (kernel/other process)', color: '#ef4444', h: 50, y: 90 },
@@ -352,9 +352,9 @@ function svDrawStage2(step) {
 }
 
 function svHexToRgb(hex) {
-  var r = parseInt(hex.slice(1,3),16);
-  var g = parseInt(hex.slice(3,5),16);
-  var b = parseInt(hex.slice(5,7),16);
+  let r = parseInt(hex.slice(1,3),16);
+  let g = parseInt(hex.slice(3,5),16);
+  let b = parseInt(hex.slice(5,7),16);
   return r + ',' + g + ',' + b;
 }
 
@@ -363,9 +363,9 @@ function svRunOobStep() {
   if (svState.oobStep >= 4) svState.oobStep = 3;
 
   // Update step visuals
-  var steps = ['svOob0','svOob1','svOob2','svOob3'];
+  let steps = ['svOob0','svOob1','svOob2','svOob3'];
   steps.forEach(function(id, i) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('active','done','danger','pending');
     if (i < svState.oobStep)  el.classList.add('done');
@@ -377,17 +377,17 @@ function svRunOobStep() {
   svState.cacheHotLine = svState.mitigation ? -1 : svState.secretByte;
   svDrawStage2(svState.oobStep);
 
-  var mit2 = document.getElementById('svMitEffect2');
+  let mit2 = document.getElementById('svMitEffect2');
   if (mit2) mit2.classList.toggle('hidden', !svState.mitigation);
 }
 
 /* ─── Stage 3: Cache Timing ─── */
 function svDrawStage3Empty() {
-  var canvas = document.getElementById('svCanvas3');
+  let canvas = document.getElementById('svCanvas3');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 300;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = 'rgba(148,163,184,0.3)';
   ctx.font = '12px Poppins,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -395,36 +395,36 @@ function svDrawStage3Empty() {
 }
 
 function svRunTimingMeasurement() {
-  var canvas = document.getElementById('svCanvas3');
+  let canvas = document.getElementById('svCanvas3');
   if (!canvas) return;
   canvas.width = canvas.parentElement.clientWidth || 500;
   canvas.height = 300;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var secret = svState.secretByte;
-  var mit = svState.mitigation;
-  var cacheHot = mit ? -1 : svState.cacheHotLine;
+  let secret = svState.secretByte;
+  let mit = svState.mitigation;
+  let cacheHot = mit ? -1 : svState.cacheHotLine;
 
-  var W = canvas.width; var H = canvas.height;
-  var pad = { top: 20, right: 15, bottom: 30, left: 45 };
-  var plotW = W - pad.left - pad.right;
-  var plotH = H - pad.top - pad.bottom;
+  let W = canvas.width; let H = canvas.height;
+  let pad = { top: 20, right: 15, bottom: 30, left: 45 };
+  let plotW = W - pad.left - pad.right;
+  let plotH = H - pad.top - pad.bottom;
 
   // Generate timing data for all 256 possible byte values
-  var timings = [];
-  for (var i = 0; i < 256; i++) {
-    var base = 180 + Math.random() * 40; // cache miss: ~180-220 cycles
-    var isHot = i === cacheHot;
+  let timings = [];
+  for (let i = 0; i < 256; i++) {
+    let base = 180 + Math.random() * 40; // cache miss: ~180-220 cycles
+    let isHot = i === cacheHot;
     timings.push(isHot ? (5 + Math.random() * 6) : base); // cache hit: ~5-11 cycles
   }
 
-  var maxT = Math.max.apply(null, timings);
-  var barW = plotW / 256;
+  let maxT = Math.max.apply(null, timings);
+  let barW = plotW / 256;
 
   // Grid line at cache hit threshold
-  var hitThreshold = 50;
-  var hitY = pad.top + (1 - hitThreshold/maxT) * plotH;
+  let hitThreshold = 50;
+  let hitY = pad.top + (1 - hitThreshold/maxT) * plotH;
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.setLineDash([3,2]);
   ctx.beginPath(); ctx.moveTo(pad.left, hitY); ctx.lineTo(W-pad.right, hitY); ctx.stroke();
   ctx.setLineDash([]);
@@ -433,10 +433,10 @@ function svRunTimingMeasurement() {
 
   // Bars
   timings.forEach(function(t, i) {
-    var h = (t / maxT) * plotH;
-    var x = pad.left + i * barW;
-    var y = pad.top + plotH - h;
-    var isHot = i === cacheHot;
+    let h = (t / maxT) * plotH;
+    let x = pad.left + i * barW;
+    let y = pad.top + plotH - h;
+    let isHot = i === cacheHot;
 
     ctx.fillStyle = isHot ? '#ef4444' : 'rgba(148,163,184,0.2)';
     ctx.fillRect(x, y, Math.max(barW - 0.5, 0.5), h);
@@ -460,7 +460,7 @@ function svRunTimingMeasurement() {
 
   // Mark the hot line
   if (cacheHot >= 0) {
-    var hotX = pad.left + cacheHot * barW;
+    let hotX = pad.left + cacheHot * barW;
     ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1;
     ctx.setLineDash([3,2]);
     ctx.beginPath(); ctx.moveTo(hotX + barW/2, pad.top); ctx.lineTo(hotX + barW/2, pad.top+plotH); ctx.stroke();
@@ -470,11 +470,11 @@ function svRunTimingMeasurement() {
   }
 
   // Show result
-  var resultEl = document.getElementById('svTimingResult');
-  var verdictEl = document.getElementById('svTimingVerdict');
-  var detailEl = document.getElementById('svTimingDetail');
-  var hintEl = document.getElementById('svCacheHint');
-  var mit3 = document.getElementById('svMitEffect3');
+  let resultEl = document.getElementById('svTimingResult');
+  let verdictEl = document.getElementById('svTimingVerdict');
+  let detailEl = document.getElementById('svTimingDetail');
+  let hintEl = document.getElementById('svCacheHint');
+  let mit3 = document.getElementById('svMitEffect3');
 
   if (resultEl) resultEl.classList.remove('hidden');
   if (mit3) mit3.classList.toggle('hidden', !mit);
@@ -498,8 +498,8 @@ function svRunTimingMeasurement() {
 
 /* ─── Mitigation toggle ─── */
 function svHandleMitToggle() {
-  var check = document.getElementById('svMitigation');
-  var stateEl = document.getElementById('svMitState');
+  let check = document.getElementById('svMitigation');
+  let stateEl = document.getElementById('svMitState');
   svState.mitigation = check.checked;
   if (stateEl) {
     stateEl.textContent = svState.mitigation ? 'ON — protected' : 'OFF — vulnerable';
@@ -511,17 +511,17 @@ function svHandleMitToggle() {
   if (svState.currentStage === 3) {
     svDrawStage3Empty();
     // Hide previous results
-    var resultEl = document.getElementById('svTimingResult');
+    let resultEl = document.getElementById('svTimingResult');
     if (resultEl) resultEl.classList.add('hidden');
-    var mit3 = document.getElementById('svMitEffect3');
+    let mit3 = document.getElementById('svMitEffect3');
     if (mit3) mit3.classList.toggle('hidden', !svState.mitigation);
   }
 }
 
 /* ─── Secret byte input ─── */
 function svHandleSecretChange() {
-  var input = document.getElementById('svSecretByte');
-  var val = parseInt(input.value);
+  let input = document.getElementById('svSecretByte');
+  let val = parseInt(input.value);
   if (!isNaN(val) && val >= 0 && val <= 255) svState.secretByte = val;
   // Update display in stage 2
   document.querySelectorAll('.sv-secret-val').forEach(function(el) { el.textContent = svState.secretByte; });
@@ -542,15 +542,15 @@ function svInit() {
     });
   });
 
-  var prevBtn = document.getElementById('svPrevStage');
-  var nextBtn = document.getElementById('svNextStage');
+  let prevBtn = document.getElementById('svPrevStage');
+  let nextBtn = document.getElementById('svNextStage');
   if (prevBtn) prevBtn.addEventListener('click', function() { svGotoStage(svState.currentStage - 1); });
   if (nextBtn) nextBtn.addEventListener('click', function() { svGotoStage(svState.currentStage + 1); });
 
   // Stage 0 playback
-  var playBtn0 = document.getElementById('svPlay0');
-  var prev0    = document.getElementById('svPrev0');
-  var next0    = document.getElementById('svNext0');
+  let playBtn0 = document.getElementById('svPlay0');
+  let prev0    = document.getElementById('svPrev0');
+  let next0    = document.getElementById('svNext0');
 
   if (playBtn0) playBtn0.addEventListener('click', svPlayStage0);
 
@@ -567,22 +567,22 @@ function svInit() {
   });
 
   // Stage 1 training
-  var trainBtn = document.getElementById('svTrainBtn');
+  let trainBtn = document.getElementById('svTrainBtn');
   if (trainBtn) trainBtn.addEventListener('click', svRunTraining);
 
   // Stage 2 OOB
-  var oobBtn = document.getElementById('svOobBtn');
+  let oobBtn = document.getElementById('svOobBtn');
   if (oobBtn) oobBtn.addEventListener('click', svRunOobStep);
 
   // Stage 3 timing
-  var timingBtn = document.getElementById('svTimingBtn');
+  let timingBtn = document.getElementById('svTimingBtn');
   if (timingBtn) timingBtn.addEventListener('click', svRunTimingMeasurement);
 
-  var secretInput = document.getElementById('svSecretByte');
+  let secretInput = document.getElementById('svSecretByte');
   if (secretInput) secretInput.addEventListener('input', svHandleSecretChange);
 
   // Mitigation toggle
-  var mitCheck = document.getElementById('svMitigation');
+  let mitCheck = document.getElementById('svMitigation');
   if (mitCheck) mitCheck.addEventListener('change', svHandleMitToggle);
 
   // Initial state

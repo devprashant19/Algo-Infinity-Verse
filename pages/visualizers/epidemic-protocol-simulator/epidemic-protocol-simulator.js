@@ -2,16 +2,16 @@ document.addEventListener('DOMContentLoaded', function() {
   epInit();
 });
 
-var EP_SPEEDS = { 1:1400, 2:700, 3:320, 4:120, 5:30 };
-var EP_SPEED_LABELS = { 1:'Slowest', 2:'Slow', 3:'Normal', 4:'Fast', 5:'Blazing' };
+let EP_SPEEDS = { 1:1400, 2:700, 3:320, 4:120, 5:30 };
+let EP_SPEED_LABELS = { 1:'Slowest', 2:'Slow', 3:'Normal', 4:'Fast', 5:'Blazing' };
 
-var EP_MODE_INFO = {
+let EP_MODE_INFO = {
   push:     '<strong>Push:</strong> Each infected node picks K random alive neighbors and sends its state to them. Simple, low overhead. Converges in O(log n) rounds with high probability.',
   pull:     '<strong>Pull:</strong> Each susceptible node picks K random peers and asks if they have newer data. Slower early spread, but better at reaching the last few stragglers.',
   pushpull: '<strong>Push-Pull:</strong> Every exchange is bidirectional — infected pushes AND susceptible pulls simultaneously. Amazon Dynamo and CockroachDB use this. Converges in roughly half the rounds of pure Push for the last few nodes.',
 };
 
-var epState = {
+let epState = {
   nodes         : [],
   round         : 0,
   mode          : 'push',
@@ -32,14 +32,14 @@ var epState = {
   dragOffY      : 0,
 };
 
-var EP_NODE_R = 18;
+let EP_NODE_R = 18;
 
 function epGenerateNodes() {
-  var n      = parseInt(document.getElementById('epNodeCount').value) || 16;
-  var wrap   = document.getElementById('epCanvasWrap');
-  var canvas = document.getElementById('epCanvas');
-  var W = wrap ? wrap.clientWidth  : 600;
-  var H = wrap ? wrap.clientHeight : 440;
+  let n      = parseInt(document.getElementById('epNodeCount').value) || 16;
+  let wrap   = document.getElementById('epCanvasWrap');
+  let canvas = document.getElementById('epCanvas');
+  let W = wrap ? wrap.clientWidth  : 600;
+  let H = wrap ? wrap.clientHeight : 440;
   canvas.width  = W;
   canvas.height = H;
 
@@ -51,8 +51,8 @@ function epGenerateNodes() {
   epState.gossipEdges   = [];
   epState.sirHistory    = [];
 
-  var padding = 50;
-  for (var i = 0; i < n; i++) {
+  let padding = 50;
+  for (let i = 0; i < n; i++) {
     epState.nodes.push({
       id     : i,
       x      : padding + Math.random() * (W - padding * 2),
@@ -71,20 +71,20 @@ function epGenerateNodes() {
 
 function epNodeAt(mx, my) {
   return epState.nodes.find(function(n) {
-    var dx = n.x - mx; var dy = n.y - my;
+    let dx = n.x - mx; let dy = n.y - my;
     return Math.sqrt(dx * dx + dy * dy) <= EP_NODE_R + 4;
   }) || null;
 }
 
 function epHandleCanvasClick(e) {
-  var canvas = document.getElementById('epCanvas');
-  var rect   = canvas.getBoundingClientRect();
-  var scaleX = canvas.width  / rect.width;
-  var scaleY = canvas.height / rect.height;
-  var mx = (e.clientX - rect.left) * scaleX;
-  var my = (e.clientY - rect.top)  * scaleY;
+  let canvas = document.getElementById('epCanvas');
+  let rect   = canvas.getBoundingClientRect();
+  let scaleX = canvas.width  / rect.width;
+  let scaleY = canvas.height / rect.height;
+  let mx = (e.clientX - rect.left) * scaleX;
+  let my = (e.clientY - rect.top)  * scaleY;
 
-  var node = epNodeAt(mx, my);
+  let node = epNodeAt(mx, my);
   if (!node) return;
 
   if (!node.alive) {
@@ -108,13 +108,13 @@ function epHandleCanvasClick(e) {
 }
 
 function epHandleMouseDown(e) {
-  var canvas = document.getElementById('epCanvas');
-  var rect   = canvas.getBoundingClientRect();
-  var scaleX = canvas.width  / rect.width;
-  var scaleY = canvas.height / rect.height;
-  var mx = (e.clientX - rect.left) * scaleX;
-  var my = (e.clientY - rect.top)  * scaleY;
-  var node = epNodeAt(mx, my);
+  let canvas = document.getElementById('epCanvas');
+  let rect   = canvas.getBoundingClientRect();
+  let scaleX = canvas.width  / rect.width;
+  let scaleY = canvas.height / rect.height;
+  let mx = (e.clientX - rect.left) * scaleX;
+  let my = (e.clientY - rect.top)  * scaleY;
+  let node = epNodeAt(mx, my);
   if (node) {
     epState.draggingId = node.id;
     epState.dragOffX   = mx - node.x;
@@ -124,13 +124,13 @@ function epHandleMouseDown(e) {
 
 function epHandleMouseMove(e) {
   if (epState.draggingId === null) return;
-  var canvas = document.getElementById('epCanvas');
-  var rect   = canvas.getBoundingClientRect();
-  var scaleX = canvas.width  / rect.width;
-  var scaleY = canvas.height / rect.height;
-  var mx = (e.clientX - rect.left) * scaleX;
-  var my = (e.clientY - rect.top)  * scaleY;
-  var node = epState.nodes.find(function(n) { return n.id === epState.draggingId; });
+  let canvas = document.getElementById('epCanvas');
+  let rect   = canvas.getBoundingClientRect();
+  let scaleX = canvas.width  / rect.width;
+  let scaleY = canvas.height / rect.height;
+  let mx = (e.clientX - rect.left) * scaleX;
+  let my = (e.clientY - rect.top)  * scaleY;
+  let node = epState.nodes.find(function(n) { return n.id === epState.draggingId; });
   if (node) {
     node.x = Math.max(EP_NODE_R, Math.min(canvas.width  - EP_NODE_R, mx - epState.dragOffX));
     node.y = Math.max(EP_NODE_R, Math.min(canvas.height - EP_NODE_R, my - epState.dragOffY));
@@ -141,15 +141,15 @@ function epHandleMouseMove(e) {
 function epHandleMouseUp() { epState.draggingId = null; }
 
 function epRender() {
-  var canvas = document.getElementById('epCanvas');
+  let canvas = document.getElementById('epCanvas');
   if (!canvas) return;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (epState.showEdges && epState.gossipEdges.length > 0) {
     epState.gossipEdges.forEach(function(edge) {
-      var from = epState.nodes[edge.from];
-      var to   = epState.nodes[edge.to];
+      let from = epState.nodes[edge.from];
+      let to   = epState.nodes[edge.to];
       if (!from || !to) return;
 
       ctx.strokeStyle = 'rgba(239,68,68,0.35)';
@@ -161,12 +161,12 @@ function epRender() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      var dx = to.x - from.x;
-      var dy = to.y - from.y;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ux  = dx / len; var uy = dy / len;
-      var ax  = to.x - ux * (EP_NODE_R + 6);
-      var ay  = to.y - uy * (EP_NODE_R + 6);
+      let dx = to.x - from.x;
+      let dy = to.y - from.y;
+      let len = Math.sqrt(dx * dx + dy * dy) || 1;
+      let ux  = dx / len; let uy = dy / len;
+      let ax  = to.x - ux * (EP_NODE_R + 6);
+      let ay  = to.y - uy * (EP_NODE_R + 6);
       ctx.fillStyle = 'rgba(239,68,68,0.5)';
       ctx.beginPath();
       ctx.moveTo(ax, ay);
@@ -177,7 +177,7 @@ function epRender() {
   }
 
   epState.nodes.forEach(function(node) {
-    var fillColor, strokeColor, glowColor;
+    let fillColor, strokeColor, glowColor;
 
     if (!node.alive) {
       fillColor   = 'rgba(71,85,105,0.3)';
@@ -238,16 +238,16 @@ function epAliveNeighbors(excludeId) {
 }
 
 function epPickRandom(arr, k) {
-  var shuffled = arr.slice().sort(function() { return Math.random() - 0.5; });
+  let shuffled = arr.slice().sort(function() { return Math.random() - 0.5; });
   return shuffled.slice(0, Math.min(k, shuffled.length));
 }
 
 function epRunRound() {
-  var failRate = epState.failRate / 100;
-  var fanout   = epState.fanout;
-  var mode     = epState.mode;
-  var newEdges = [];
-  var anyInfected = false;
+  let failRate = epState.failRate / 100;
+  let fanout   = epState.fanout;
+  let mode     = epState.mode;
+  let newEdges = [];
+  let anyInfected = false;
 
   epState.nodes.forEach(function(node) {
     if (!node.alive) return;
@@ -261,7 +261,7 @@ function epRunRound() {
       node.rounds++;
 
       if (mode === 'push' || mode === 'pushpull') {
-        var targets = epPickRandom(epAliveNeighbors(node.id), fanout);
+        let targets = epPickRandom(epAliveNeighbors(node.id), fanout);
         targets.forEach(function(t) {
           epState.messagesSent++;
           newEdges.push({ from: node.id, to: t.id });
@@ -276,7 +276,7 @@ function epRunRound() {
   if (mode === 'pull' || mode === 'pushpull') {
     epState.nodes.forEach(function(node) {
       if (!node.alive || node.state !== 'S') return;
-      var peers = epPickRandom(epAliveNeighbors(node.id), fanout);
+      let peers = epPickRandom(epAliveNeighbors(node.id), fanout);
       peers.forEach(function(p) {
         epState.messagesSent++;
         if (p.state === 'I' || p.state === 'R') {
@@ -290,7 +290,7 @@ function epRunRound() {
   epState.gossipEdges = newEdges;
   epState.round++;
 
-  var counts = epCountSIR();
+  let counts = epCountSIR();
   epState.sirHistory.push({ s: counts.s, i: counts.i, r: counts.r });
 
   epLogRound(counts);
@@ -299,7 +299,7 @@ function epRunRound() {
   epDrawSirChart();
   epRender();
 
-  var aliveCount = epState.nodes.filter(function(n) { return n.alive; }).length;
+  let aliveCount = epState.nodes.filter(function(n) { return n.alive; }).length;
 
   if (!epState.converged && counts.i === 0 && counts.s === 0) {
     epState.converged     = true;
@@ -324,15 +324,15 @@ function epRunRound() {
 }
 
 function epRunAntiEntropy() {
-  var rounds = 0;
-  var maxAE  = 3;
+  let rounds = 0;
+  let maxAE  = 3;
   function aeRound() {
     if (rounds >= maxAE) return;
     rounds++;
-    var edges = [];
+    let edges = [];
     epState.nodes.forEach(function(node) {
       if (!node.alive) return;
-      var peers = epPickRandom(epAliveNeighbors(node.id), 2);
+      let peers = epPickRandom(epAliveNeighbors(node.id), 2);
       peers.forEach(function(p) {
         edges.push({ from: node.id, to: p.id });
         epState.messagesSent++;
@@ -347,7 +347,7 @@ function epRunAntiEntropy() {
 }
 
 function epCountSIR() {
-  var s = 0; var i = 0; var r = 0; var d = 0;
+  let s = 0; let i = 0; let r = 0; let d = 0;
   epState.nodes.forEach(function(n) {
     if (!n.alive) { d++; return; }
     if (n.state === 'S') s++;
@@ -358,31 +358,31 @@ function epCountSIR() {
 }
 
 function epUpdateCounters() {
-  var c = epCountSIR();
-  var sEl = document.getElementById('epCountS');
-  var iEl = document.getElementById('epCountI');
-  var rEl = document.getElementById('epCountR');
-  var dEl = document.getElementById('epCountD');
+  let c = epCountSIR();
+  let sEl = document.getElementById('epCountS');
+  let iEl = document.getElementById('epCountI');
+  let rEl = document.getElementById('epCountR');
+  let dEl = document.getElementById('epCountD');
   if (sEl) sEl.textContent = c.s;
   if (iEl) iEl.textContent = c.i;
   if (rEl) rEl.textContent = c.r;
   if (dEl) dEl.textContent = c.d;
 
-  var rndEl = document.getElementById('epRound');
+  let rndEl = document.getElementById('epRound');
   if (rndEl) rndEl.textContent = epState.round;
 }
 
 function epUpdateStats() {
-  var c     = epCountSIR();
-  var alive = epState.nodes.filter(function(n) { return n.alive; }).length;
-  var total = epState.nodes.length;
-  var spread = alive > 0 ? Math.round((c.r / alive) * 100) + '%' : '—';
+  let c     = epCountSIR();
+  let alive = epState.nodes.filter(function(n) { return n.alive; }).length;
+  let total = epState.nodes.length;
+  let spread = alive > 0 ? Math.round((c.r / alive) * 100) + '%' : '—';
 
-  var srEl  = document.getElementById('epStatRounds');
-  var scEl  = document.getElementById('epStatConverge');
-  var smEl  = document.getElementById('epStatMessages');
-  var saEl  = document.getElementById('epStatAlive');
-  var sspEl = document.getElementById('epStatSpread');
+  let srEl  = document.getElementById('epStatRounds');
+  let scEl  = document.getElementById('epStatConverge');
+  let smEl  = document.getElementById('epStatMessages');
+  let saEl  = document.getElementById('epStatAlive');
+  let sspEl = document.getElementById('epStatSpread');
 
   if (srEl)  srEl.textContent  = epState.round;
   if (scEl)  scEl.textContent  = epState.convergeRound !== null ? 'Round ' + epState.convergeRound : '—';
@@ -396,11 +396,11 @@ function epLogRound(counts) {
 }
 
 function epAddLog(msg, cls) {
-  var log   = document.getElementById('epRoundLog');
+  let log   = document.getElementById('epRoundLog');
   if (!log) return;
-  var empty = log.querySelector('.ep-log-empty');
+  let empty = log.querySelector('.ep-log-empty');
   if (empty) empty.remove();
-  var entry = document.createElement('div');
+  let entry = document.createElement('div');
   entry.className = 'ep-log-entry ' + (cls || '');
   entry.textContent = msg;
   log.insertBefore(entry, log.firstChild);
@@ -408,30 +408,30 @@ function epAddLog(msg, cls) {
 }
 
 function epDrawSirChart() {
-  var canvas = document.getElementById('epSirCanvas');
+  let canvas = document.getElementById('epSirCanvas');
   if (!canvas) return;
   canvas.width  = canvas.parentElement.clientWidth;
   canvas.height = 130;
-  var ctx = canvas.getContext('2d');
+  let ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  var hist = epState.sirHistory;
+  let hist = epState.sirHistory;
   if (hist.length < 2) return;
 
-  var W   = canvas.width;
-  var H   = canvas.height;
-  var pad = { top: 10, right: 10, bottom: 20, left: 32 };
-  var plotW = W - pad.left - pad.right;
-  var plotH = H - pad.top  - pad.bottom;
+  let W   = canvas.width;
+  let H   = canvas.height;
+  let pad = { top: 10, right: 10, bottom: 20, left: 32 };
+  let plotW = W - pad.left - pad.right;
+  let plotH = H - pad.top  - pad.bottom;
 
-  var total = epState.nodes.length;
+  let total = epState.nodes.length;
 
   function xPos(i)   { return pad.left + (i / (hist.length - 1)) * plotW; }
   function yPos(val) { return pad.top  + (1 - val / total) * plotH; }
 
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   [0, Math.floor(total / 2), total].forEach(function(v) {
-    var y = yPos(v);
+    let y = yPos(v);
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
     ctx.fillStyle    = 'rgba(148,163,184,0.4)';
     ctx.font         = '8px Fira Code,monospace';
@@ -440,7 +440,7 @@ function epDrawSirChart() {
     ctx.fillText(v, pad.left - 4, y);
   });
 
-  var curves = [
+  let curves = [
     { key: 's', color: '#94a3b8' },
     { key: 'r', color: '#22c55e' },
     { key: 'i', color: '#ef4444' },
@@ -451,8 +451,8 @@ function epDrawSirChart() {
     ctx.lineWidth   = 2;
     ctx.beginPath();
     hist.forEach(function(entry, i) {
-      var x = xPos(i);
-      var y = yPos(entry[curve.key]);
+      let x = xPos(i);
+      let y = yPos(entry[curve.key]);
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
@@ -467,7 +467,7 @@ function epDrawSirChart() {
 
 function epPlay() {
   if (!epState.playing) return;
-  var done = epRunRound();
+  let done = epRunRound();
   if (done) {
     epState.playing = false;
     return;
@@ -477,20 +477,20 @@ function epPlay() {
 
 function epRun() {
   if (epState.nodes.length === 0) epGenerateNodes();
-  var infected = epState.nodes.filter(function(n) { return n.alive && n.state === 'I'; });
+  let infected = epState.nodes.filter(function(n) { return n.alive && n.state === 'I'; });
   if (infected.length === 0) {
     epSetStatus('Click any node to infect it first, then click Run Gossip.');
     return;
   }
   epState.playing = true;
-  var stepBtn = document.getElementById('epStepBtn');
+  let stepBtn = document.getElementById('epStepBtn');
   if (stepBtn) stepBtn.disabled = false;
   epPlay();
 }
 
 function epStepRound() {
   if (epState.nodes.length === 0) return;
-  var infected = epState.nodes.filter(function(n) { return n.alive && n.state === 'I'; });
+  let infected = epState.nodes.filter(function(n) { return n.alive && n.state === 'I'; });
   if (infected.length === 0) { epSetStatus('Infect a node first.'); return; }
   epRunRound();
 }
@@ -499,14 +499,14 @@ function epReset() {
   epState.playing = false;
   if (epState.timer) { clearTimeout(epState.timer); epState.timer = null; }
   epGenerateNodes();
-  var stepBtn = document.getElementById('epStepBtn');
+  let stepBtn = document.getElementById('epStepBtn');
   if (stepBtn) stepBtn.disabled = true;
-  var log = document.getElementById('epRoundLog');
+  let log = document.getElementById('epRoundLog');
   if (log) log.innerHTML = '<div class="ep-log-empty">No rounds yet.</div>';
 }
 
 function epSetStatus(msg, cls) {
-  var el = document.getElementById('epStatus');
+  let el = document.getElementById('epStatus');
   if (!el) return;
   el.textContent = msg;
   el.className   = 'ep-status ' + (cls || '');
@@ -515,7 +515,7 @@ function epSetStatus(msg, cls) {
 function epInit() {
   epGenerateNodes();
 
-  var canvas = document.getElementById('epCanvas');
+  let canvas = document.getElementById('epCanvas');
   if (canvas) {
     canvas.addEventListener('click',     epHandleCanvasClick);
     canvas.addEventListener('mousedown', epHandleMouseDown);
@@ -523,38 +523,38 @@ function epInit() {
     document.addEventListener('mouseup',   epHandleMouseUp);
   }
 
-  var nodeCountSl = document.getElementById('epNodeCount');
+  let nodeCountSl = document.getElementById('epNodeCount');
   if (nodeCountSl) {
     nodeCountSl.addEventListener('input', function() {
-      var lbl = document.getElementById('epNodeCountVal');
+      let lbl = document.getElementById('epNodeCountVal');
       if (lbl) lbl.textContent = nodeCountSl.value;
       epReset();
     });
   }
 
-  var fanoutSl = document.getElementById('epFanout');
+  let fanoutSl = document.getElementById('epFanout');
   if (fanoutSl) {
     fanoutSl.addEventListener('input', function() {
       epState.fanout = parseInt(fanoutSl.value);
-      var lbl = document.getElementById('epFanoutVal');
+      let lbl = document.getElementById('epFanoutVal');
       if (lbl) lbl.textContent = fanoutSl.value;
     });
   }
 
-  var speedSl = document.getElementById('epSpeed');
+  let speedSl = document.getElementById('epSpeed');
   if (speedSl) {
     speedSl.addEventListener('input', function() {
       epState.speed = parseInt(speedSl.value);
-      var lbl = document.getElementById('epSpeedVal');
+      let lbl = document.getElementById('epSpeedVal');
       if (lbl) lbl.textContent = EP_SPEED_LABELS[epState.speed] || 'Normal';
     });
   }
 
-  var failSl = document.getElementById('epFailRate');
+  let failSl = document.getElementById('epFailRate');
   if (failSl) {
     failSl.addEventListener('input', function() {
       epState.failRate = parseInt(failSl.value);
-      var lbl = document.getElementById('epFailRateVal');
+      let lbl = document.getElementById('epFailRateVal');
       if (lbl) lbl.textContent = failSl.value + '%';
     });
   }
@@ -564,19 +564,19 @@ function epInit() {
       document.querySelectorAll('.ep-mode-btn').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       epState.mode = btn.getAttribute('data-mode');
-      var info = document.getElementById('epModeInfo');
+      let info = document.getElementById('epModeInfo');
       if (info) info.innerHTML = EP_MODE_INFO[epState.mode] || '';
     });
   });
 
-  var runBtn   = document.getElementById('epRunBtn');
-  var stepBtn  = document.getElementById('epStepBtn');
-  var resetBtn = document.getElementById('epResetBtn');
+  let runBtn   = document.getElementById('epRunBtn');
+  let stepBtn  = document.getElementById('epStepBtn');
+  let resetBtn = document.getElementById('epResetBtn');
   if (runBtn)   runBtn.addEventListener('click', epRun);
   if (stepBtn)  stepBtn.addEventListener('click', epStepRound);
   if (resetBtn) resetBtn.addEventListener('click', epReset);
 
-  var edgesChk = document.getElementById('epShowEdges');
+  let edgesChk = document.getElementById('epShowEdges');
   if (edgesChk) {
     edgesChk.addEventListener('change', function() {
       epState.showEdges = edgesChk.checked;
@@ -584,7 +584,7 @@ function epInit() {
     });
   }
 
-  var aeChk = document.getElementById('epAntiEntropy');
+  let aeChk = document.getElementById('epAntiEntropy');
   if (aeChk) {
     aeChk.addEventListener('change', function() {
       epState.antiEntropy = aeChk.checked;
@@ -592,13 +592,13 @@ function epInit() {
   }
 
   window.addEventListener('resize', function() {
-    var wrap   = document.getElementById('epCanvasWrap');
-    var canvas = document.getElementById('epCanvas');
+    let wrap   = document.getElementById('epCanvasWrap');
+    let canvas = document.getElementById('epCanvas');
     if (!wrap || !canvas) return;
-    var W = wrap.clientWidth;
-    var H = wrap.clientHeight || 440;
-    var scaleX = W / (canvas.width  || W);
-    var scaleY = H / (canvas.height || H);
+    let W = wrap.clientWidth;
+    let H = wrap.clientHeight || 440;
+    let scaleX = W / (canvas.width  || W);
+    let scaleY = H / (canvas.height || H);
     epState.nodes.forEach(function(n) { n.x *= scaleX; n.y *= scaleY; });
     canvas.width  = W;
     canvas.height = H;

@@ -1,28 +1,28 @@
 document.addEventListener("DOMContentLoaded", function() {
-    var menuToggle = document.getElementById("menuToggle");
-    var navLinks = document.getElementById("navLinks");
+    let menuToggle = document.getElementById("menuToggle");
+    let navLinks = document.getElementById("navLinks");
 
-    var overlay = document.querySelector(".nav-overlay");
+    let overlay = document.querySelector(".nav-overlay");
     if (!overlay && menuToggle && navLinks) {
         overlay = document.createElement("div");
         overlay.className = "nav-overlay";
         document.body.appendChild(overlay);
     }
 
-    var toggleMenu = function(open) {
-        var isOpen = open !== undefined ? open : !navLinks.classList.contains("active");
+    let toggleMenu = function(open) {
+        let isOpen = open !== undefined ? open : !navLinks.classList.contains("active");
         navLinks.classList.toggle("active", isOpen);
         menuToggle.setAttribute("aria-expanded", isOpen);
         if (overlay) overlay.classList.toggle("active", isOpen);
         document.body.style.overflow = isOpen ? "hidden" : "";
-        var icon = menuToggle.querySelector("i");
+        let icon = menuToggle.querySelector("i");
         if (icon) {
             icon.classList.toggle("fa-bars", !isOpen);
             icon.classList.toggle("fa-times", isOpen);
         }
     };
 
-    var closeMenu = function() {
+    let closeMenu = function() {
         if (!navLinks.classList.contains("active")) return;
         toggleMenu(false);
     };
@@ -40,10 +40,10 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    var darkModeToggle = document.getElementById("darkModeToggle");
+    let darkModeToggle = document.getElementById("darkModeToggle");
     if (darkModeToggle) {
-        var savedMode = localStorage.getItem("theme");
-        var isLightMode = savedMode === "light";
+        let savedMode = localStorage.getItem("theme");
+        let isLightMode = savedMode === "light";
         if (isLightMode) {
             document.documentElement.classList.add("light-mode");
             darkModeToggle.querySelector("i").classList.replace("fa-moon", "fa-sun");
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         darkModeToggle.addEventListener("click", function() {
             document.documentElement.classList.toggle("light-mode");
-            var icon = darkModeToggle.querySelector("i");
+            let icon = darkModeToggle.querySelector("i");
             if (document.documentElement.classList.contains("light-mode")) {
                 icon.classList.replace("fa-moon", "fa-sun");
                 localStorage.setItem("theme", "light");
@@ -62,8 +62,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    var supportForm = document.getElementById("supportForm");
-    var bugForm = document.getElementById("bugForm");
+    let supportForm = document.getElementById("supportForm");
+    let bugForm = document.getElementById("bugForm");
 
     if (supportForm) {
         supportForm.addEventListener("submit", function(e) {
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function showToast(text) {
-        var message = document.createElement("div");
+        let message = document.createElement("div");
         message.innerText = text;
         message.className = "message-box";
         document.body.appendChild(message);

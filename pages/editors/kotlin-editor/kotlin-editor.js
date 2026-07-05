@@ -74,7 +74,7 @@ const KOTLIN_EXAMPLES = {
       name: "Main.kt",
       content: `fun main() {
     val name = "Lakshay" // Read-only variable
-    var age = 21         // Mutable variable
+    let age = 21         // Mutable variable
     val score = 98.5
     val isReady = true
 
