@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputText = problemInput.value.trim();
 
     if (!inputText) {
-      console.warn("Alert:", "Please enter a problem statement.");
+      void 0;
       return;
     }
 

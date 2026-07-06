@@ -38,7 +38,7 @@ async function ensureAuth() {
   if (!auth) {
     auth = getAuth(app);
     auth.onAuthStateChanged((user) => {
-      stateListeners.forEach(cb => { try { cb(user); } catch (e) { console.warn("Firebase auth listener error:", e); } });
+      stateListeners.forEach(cb => { try { cb(user); } catch (e) { void 0; } });
     });
   }
   return auth;
@@ -54,7 +54,7 @@ export async function getRedirectUser() {
       return { idToken, user: result.user };
     }
   } catch (error) {
-    console.warn("[firebase-client] getRedirectResult error:", error?.code || error?.message || error);
+    void 0;
   }
 
   if (authInstance.currentUser) {
@@ -62,7 +62,7 @@ export async function getRedirectUser() {
       const idToken = await authInstance.currentUser.getIdToken(true);
       return { idToken, user: authInstance.currentUser };
     } catch (tokenError) {
-      console.warn("[firebase-client] getCurrentUser getIdToken failed:", tokenError);
+      void 0;
     }
     return null;
   }
@@ -112,7 +112,7 @@ export function getCurrentUser() {
 export function onAuthChange(callback) {
   stateListeners.push(callback);
   if (auth && auth.currentUser !== undefined) {
-    try { callback(auth.currentUser); } catch (e) { console.warn(e); }
+    try { callback(auth.currentUser); } catch (e) { void 0; }
   }
   return () => {
     stateListeners = stateListeners.filter(cb => cb !== callback);

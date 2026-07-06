@@ -176,7 +176,7 @@ async function loadPartial(id, url) {
     handleActiveNav();
   } catch (e) {
     if (e.name !== 'AbortError') {
-      console.warn('Could not load partial:', url, e);
+      void 0;
     }
   } finally {
     if (typeof apiAbort !== 'undefined') {

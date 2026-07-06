@@ -759,11 +759,9 @@ if (process.env.VERCEL !== "1") {
 
       server.listen(port, host, () => {
         const url = `http://${host}:${port}`;
-        console.log(`Server running at ${url}`);
+        void 0;
         if (!process.env.SESSION_SECRET) {
-          console.warn(
-            "Using a development SESSION_SECRET. Set SESSION_SECRET before deploying.",
-          );
+          void 0;
         }
       });
     })

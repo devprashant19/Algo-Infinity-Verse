@@ -20,7 +20,7 @@ function getQuizTopicKey(topic) {
 function initQuizSection() {
   const dsaTopics = window.dsaTopics || [];
   const quizGrid = document.querySelector(".quiz-grid");
-  if (!quizGrid) { console.warn("Quiz grid element not found"); return; }
+  if (!quizGrid) { void 0; return; }
   quizGrid.innerHTML = "";
   dsaTopics.forEach((topic, index) => {
     const topicKey = getQuizTopicKey(topic);

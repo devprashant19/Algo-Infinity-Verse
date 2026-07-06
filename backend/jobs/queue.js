@@ -28,7 +28,7 @@ async function checkRedis() {
     });
     bulkAuditQueue = new Queue('bulk-audit-queue', { connection });
     bulkAuditQueue.on('error', (err) => {
-      console.warn('Queue Redis Connection Error:', err.message);
+      void 0;
     });
   } catch {
     redisAvailable = false;
@@ -72,7 +72,7 @@ export async function enqueueBulkAudit(batchId, repoUrls) {
       await bulkAuditQueue.addBulk(jobs);
       return;
     } catch (err) {
-      console.warn("Bulk add to Redis failed. Falling back to in-process.");
+      void 0;
     }
   }
 

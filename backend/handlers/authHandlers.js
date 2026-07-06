@@ -115,11 +115,7 @@ export async function handleSignup(req, res) {
   
   if (existing) {
     await normalizeAuthDelay();
-    console.warn("[signup] duplicate email attempt", {
-      email,
-      ip: clientId,
-      at: new Date().toISOString(),
-    });
+    void 0;
     return sendJson(res, 200, { ok: true });
   }
 
@@ -147,10 +143,7 @@ export async function handleLogin(req, res) {
   const clientId = getClientIdentifier(req);
 
   if (isLoginRateLimited(clientId)) {
-    console.warn("[login] rate limited", {
-      ip: clientId,
-      at: new Date().toISOString(),
-    });
+    void 0;
     await normalizeAuthDelay();
     return sendJson(
       res,

@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadProblem() {
         const problemId = problemSelect.value;
         if (!problemId) {
-            console.warn("Alert:", 'Please select a problem');
+            void 0;
             return;
         }
 
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const optimal = optimalCode.textContent.trim();
         
         if (!user || user === '// Write your solution here...') {
-            console.warn("Alert:", 'Please write your solution first!');
+            void 0;
             return;
         }
 

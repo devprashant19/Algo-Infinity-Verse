@@ -6,7 +6,7 @@ import { calculateReadinessScore } from '../services/readinessEngine.js';
  * Background job to process and update interview readiness scores for users
  */
 export async function processUserReadinessScores() {
-  console.log('Starting automated readiness score updates...');
+  void 0;
   
   try {
     // 1. Fetch users who need their scores updated 
@@ -21,7 +21,7 @@ export async function processUserReadinessScores() {
       const analytics = calculateReadinessScore(user);
       
       // 3. Save the computed metrics back to the database
-      console.log(`[JOB] Updated Score for User ${user.id}: ${analytics.overallPercentage}%`);
+      void 0;
       
       /* await db.ReadinessDashboard.upsert({
         userId: user.id,
@@ -34,7 +34,7 @@ export async function processUserReadinessScores() {
       */
     }
     
-    console.log('Automated readiness score updates completed successfully.');
+    void 0;
   } catch (error) {
     console.error('Error running readiness score job:', error);
   }

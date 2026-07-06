@@ -320,7 +320,7 @@ function updateLeaderboard(page = 1) {
         renderPaginationControls(false);
     }).catch(error => {
         if (error.name === 'AbortError') return;
-        console.warn("Could not load leaderboard:", error);
+        void 0;
         if (requestId !== leaderboardRequestId) return;
         renderLeaderboardRows([], getCurrentUserId(), { emptyMessage: "Leaderboard unavailable." });
         renderPaginationControls(true, true);

@@ -263,7 +263,7 @@ function saveEditorDraft(problemId, code, signature) {
   try {
     localStorage.setItem(`editorDraft_${problemId}`, code);
     if (signature) localStorage.setItem(`editorDraft_sig_${problemId}`, signature);
-  } catch (e) { console.warn('Could not save draft:', e); }
+  } catch (e) { void 0; }
 }
 
 function getEditorDraft(problemId) { try { return localStorage.getItem(`editorDraft_${problemId}`); } catch (e) { return null; } }
@@ -273,7 +273,7 @@ function clearEditorDraft(problemId) {
   try {
     localStorage.removeItem(`editorDraft_${problemId}`);
     localStorage.removeItem(`editorDraft_sig_${problemId}`);
-  } catch (e) { console.warn('Could not clear draft:', e); }
+  } catch (e) { void 0; }
 }
 
 function getXPForDifficulty(difficulty) { const map = { easy: 100, medium: 250, hard: 500 }; return map[difficulty.toLowerCase()] || 100; }

@@ -62,7 +62,7 @@ async function startWorker() {
   });
 
   auditWorker.on('error', (err) => {
-    console.warn('Worker Redis Connection Error:', err.message);
+    void 0;
   });
 
   // Event listeners for tracking batch progress
@@ -84,7 +84,7 @@ async function startWorker() {
     }
   });
 
-  console.log('Background Audit Worker started and listening for jobs...');
+  void 0;
   return auditWorker;
 }
 
@@ -92,7 +92,7 @@ async function startWorker() {
 // Redis hiccup at boot doesn't crash the importing process; jobs fall back to
 // the in-process path in queue.js.
 const workerReady = startWorker().catch((err) => {
-  console.warn('Failed to start Background Audit Worker:', err.message);
+  void 0;
   return null;
 });
 

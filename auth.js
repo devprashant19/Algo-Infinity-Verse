@@ -220,13 +220,13 @@
             try {
               await window.__firebaseClient.signOutUser();
             } catch (e) {
-              console.warn("Firebase sign-out failed", e);
+              void 0;
               logoutButton.disabled = false;
               return;
             }
           }
         } catch (error) {
-          console.warn("Logout failed", error);
+          void 0;
           logoutButton.disabled = false;
           return;
         }
@@ -270,11 +270,11 @@
           location.href = getNextDestination();
         } else {
           const text = JSON.stringify(payload);
-          console.warn("Guest auth failed:", response.status, text);
+          void 0;
           throw new Error("Guest login failed: " + (payload.error || text || response.status));
         }
       } catch (error) {
-        console.warn("Alert:", error.message || "Guest login failed. Please try again.");
+        void 0;
       } finally {
         guestBtn.disabled = false;
         delete guestBtn.dataset.loading;
@@ -342,7 +342,7 @@
           return;
         } else {
           const text = await response.text();
-          console.warn("Google auth failed:", response.status, text);
+          void 0;
           throw new Error("Google sign-in failed. Please try again.");
         }
       }
@@ -605,11 +605,11 @@
             updateProfileNames(currentSession.user);
           } else {
             const text = await response.text();
-            console.warn("Google auth failed:", response.status, text);
+            void 0;
           }
         }
       } catch (error) {
-        console.warn("Google redirect auth error:", error);
+        void 0;
       }
     }
 
@@ -675,11 +675,11 @@ const data = await response.json();
         throw new Error(data.error || "Failed to deactivate account.");
       }
 
-      console.warn("Alert:", "Account deactivated successfully.");
+      void 0;
 
       window.location.href = "/login";
     } catch (error) {
-      console.warn("Alert:", error.message);
+      void 0;
     }
   });
 }
@@ -724,11 +724,11 @@ const data = await response.json();
         throw new Error(data.error || "Failed to delete account.");
       }
 
-      console.warn("Alert:", "Account deleted successfully.");
+      void 0;
 
       window.location.href = "/login";
     } catch (error) {
-      console.warn("Alert:", error.message);
+      void 0;
     }
   });
 }

@@ -17,7 +17,7 @@ function initFirebase() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   if (!projectId || !clientEmail || !privateKey) {
-    console.warn("Firebase credentials not set.");
+    void 0;
     return;
   }
 

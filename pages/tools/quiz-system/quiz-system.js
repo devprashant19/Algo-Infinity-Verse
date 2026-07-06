@@ -322,7 +322,7 @@ class QuizState {
             raw[tag] = (raw[tag] || 0) + 1;
             localStorage.setItem(MISTAKE_STORAGE_KEY, JSON.stringify(raw));
         } catch (e) {
-            console.warn('Could not persist mistake tag:', e);
+            void 0;
         }
     }
 
@@ -640,7 +640,7 @@ class QuizController {
 
             if (!sessionData.authenticated || !sessionData.user) {
                 // User not logged in — skip saving
-                console.log('Quiz result not saved: user not authenticated.');
+                void 0;
                 return;
             }
 
@@ -666,13 +666,13 @@ class QuizController {
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
-                console.warn('Failed to save quiz result:', err.error || response.statusText);
+                void 0;
             } else {
-                console.log('Quiz result saved successfully.');
+                void 0;
             }
         } catch (error) {
             // Network failure — log but don't block UI
-            console.warn('Quiz result save failed (network):', error.message);
+            void 0;
         }
     }
 

@@ -125,8 +125,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = targetTopic.value;
 
     // Debug logs
-    console.log("Source:", source);
-    console.log("Target:", target);
+    void 0;
+    void 0;
 
     if (!source || !target) {
       sharedConcept.textContent = "Please select both topics.";
@@ -148,14 +148,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const key = `${source}-${target}`;
     const reverseKey = `${target}-${source}`;
 
-    console.log("Key:", key);
-    console.log("Reverse Key:", reverseKey);
+    void 0;
+    void 0;
 
     const data =
       connections[key] ||
       connections[reverseKey];
 
-    console.log("Connection Data:", data);
+    void 0;
 
     if (!data) {
       sharedConcept.textContent =
@@ -174,5 +174,5 @@ document.addEventListener("DOMContentLoaded", () => {
     exampleProblems.textContent = data.examples;
   });
 
-  console.log("Cross Topic Transfer Trainer Loaded");
+  void 0;
 });

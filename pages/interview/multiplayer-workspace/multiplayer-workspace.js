@@ -708,7 +708,7 @@ function setupAudioVisualizer(stream) {
 
         if (els.audioViz) els.audioViz.classList.add('active');
     } catch (e) {
-        console.warn('Audio visualizer not available:', e);
+        void 0;
     }
 }
 

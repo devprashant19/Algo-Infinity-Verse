@@ -93,7 +93,7 @@ class CacheManager {
         req.onerror = () => reject(req.error);
       });
     } catch (e) {
-      console.warn("Cache set error:", e);
+      void 0;
     }
   }
 
@@ -122,7 +122,7 @@ class CacheManager {
         req.onerror = () => reject(req.error);
       });
     } catch (e) {
-      console.warn("Cache get error:", e);
+      void 0;
       return null;
     }
   }
@@ -144,7 +144,7 @@ class CacheManager {
         req.onerror = () => reject(req.error);
       });
     } catch (e) {
-      console.warn("Cache invalidate error:", e);
+      void 0;
     }
   }
 
@@ -169,7 +169,7 @@ class CacheManager {
         return data;
       } catch (e) {
         if (e.name === 'AbortError') throw e;
-        console.warn(`CacheManager fetch failed for ${url}:`, e);
+        void 0;
         if (cached) return cached.data;
         throw e;
       }
@@ -179,7 +179,7 @@ class CacheManager {
       const age = Date.now() - cached.updatedAt;
       if (age > ttlMs / 2) {
         doFetch().catch(e => {
-          if (e.name !== 'AbortError') console.warn('Background revalidate failed:', e);
+          if (e.name !== 'AbortError') void 0;
         });
       }
       return cached.data;
@@ -234,7 +234,7 @@ async function loadPartial(id, url) {
     handleActiveNav();
   } catch (e) {
     if (e.name !== 'AbortError') {
-      console.warn('Could not load partial:', url);
+      void 0;
     }
   } finally {
     apiAbort.clearSignal(abortKey);
@@ -535,7 +535,7 @@ async function syncUserProgress() {
   try {
     await fetch("/api/progress", { credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: userProgress.name, xp: userProgress.xp, level: userProgress.level, avatar: userProgress.avatar, activityData: userProgress.activityData }) });
     updateLeaderboard();
-  } catch (e) { console.warn("Could not sync user progress:", e); }
+  } catch (e) { void 0; }
 }
 
 async function getAuthenticatedSession() {
@@ -1096,7 +1096,7 @@ document.addEventListener('keydown', function(e) {
         const nameVal = nameInput ? nameInput.value.trim() : "";
         
         if (!nameVal) {
-            console.warn("Alert:", "Please enter a valid display name.");
+            void 0;
             return;
         }
         
@@ -1221,7 +1221,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        void 0;
         
         if (registration.waiting) {
           showUpdateToast(registration.waiting);
@@ -1237,13 +1237,13 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
-        console.log('ServiceWorker registration failed: ', error);
+        void 0;
       });
       
     navigator.serviceWorker.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'PROCESS_OFFLINE_QUEUE') {
         if (window.offlineStore && typeof window.offlineStore.syncQueue === 'function') {
-          console.log('[App] Processing offline action queue...');
+          void 0;
           await window.offlineStore.syncQueue();
         }
       }
@@ -1314,7 +1314,7 @@ function getActivities() {
         const data = localStorage.getItem(ACTIVITY_STORAGE_KEY);
         return data ? JSON.parse(data) : [];
     } catch (e) {
-        console.warn('Could not load activities:', e);
+        void 0;
         return [];
     }
 }

@@ -148,7 +148,7 @@ function setupEventListeners() {
             els.branchName.value = '';
             updateUI();
         } catch (e) {
-            console.warn("Alert:", e.message);
+            void 0;
         }
     });
 

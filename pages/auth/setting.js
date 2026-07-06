@@ -24,7 +24,7 @@ const saveBtn = document.querySelector(".btn");
 
 if (saveBtn) {
     saveBtn.addEventListener("click", function () {
-        console.warn("Alert:", "Changes saved successfully!");
+        void 0;
     });
 }
 
@@ -49,16 +49,16 @@ if (buttons.length > 1) {
             newPassword === "" ||
             confirmPassword === ""
         ) {
-            console.warn("Alert:", "Please fill all password fields.");
+            void 0;
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            console.warn("Alert:", "Passwords do not match.");
+            void 0;
             return;
         }
 
-        console.warn("Alert:", "Password updated successfully!");
+        void 0;
     });
 }
 
@@ -72,9 +72,7 @@ toggles.forEach(toggle => {
 
     toggle.addEventListener("change", function () {
 
-        console.log(
-            this.checked ? "Enabled" : "Disabled"
-        );
+        void 0;
 
     });
 
@@ -88,7 +86,7 @@ if (deleteBtn) {
         const confirmDelete = false /* confirm removed */;
 
         if (confirmDelete) {
-            console.warn("Alert:", "Account deleted successfully (frontend only).");
+            void 0;
             
         }
     });

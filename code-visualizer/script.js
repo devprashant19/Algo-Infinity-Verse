@@ -197,7 +197,7 @@ class CodeExecutor {
                 this.output.push(output);
                 this.addTrace(`📤 Output: ${output}`);
                 // Also show in console
-                console.log(output);
+                void 0;
                 return;
             }
         }
@@ -823,7 +823,7 @@ function renderCertificatesDashboard(tracks) {
         // Automatically uses structural records cleanly 
         downloadCertificatePDF("Prasiddhi Mishra", track.topicName, track.completionDate, track.certificateId);
       } else {
-        console.warn("Alert:", "This roadmap track is not fully completed yet.");
+        void 0;
       }
     });
 

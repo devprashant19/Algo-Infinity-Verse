@@ -1170,7 +1170,7 @@ async function handleApi(req, res, pathname) {
       const password = String(payload.password || "");
       const user = await getUserByEmail(email);
       if (!user || !user.password || !passwordMatches(password, user.password)) {
-       console.warn(`[LOGIN FAILED] ${email}`);
+       void 0;
       return sendJson(res, 401, { error: "Invalid email or password." });
       }
 
@@ -1588,7 +1588,7 @@ if (pathname === "/api/forgot-password" && req.method === "POST") {
       }
     } catch (err) {
       // Silently fail — don't expose whether email exists
-      console.warn("[forgot-password]", err.message);
+      void 0;
     }
 
     // Always return success to prevent email enumeration
@@ -3173,20 +3173,20 @@ function cleanupStudyUser(socket, roomId, userId) {
   if (remainingCount === 0) {
     if (room.timerInterval) clearInterval(room.timerInterval);
     studyRooms.delete(roomId);
-    console.log(`🗑️ Study room ${roomId} deleted (empty)`);
+    void 0;
   } else {
     if (room.hostId === userId) {
       const nextHostId = Object.keys(room.participants)[0];
       room.hostId = nextHostId;
       room.hostName = room.participants[nextHostId].name;
-      console.log(`👑 Host transferred to ${room.hostName} in room ${roomId}`);
+      void 0;
     }
     io.to(roomId).emit("study-room-updated", serializeRoom(room));
   }
 }
 
 io.on("connection", (socket) => {
-console.log("🟢 New client connected:", socket.id);
+void 0;
 
 
 
@@ -3200,7 +3200,7 @@ socket.on('ai-evaluate-code', async (data = {}) => {
         return socket.emit('ai-interviewer-feedback', { hint: 'Unable to analyze code right now.' });
     }
 
-    console.log(`🤖 AI Interviewer analyzing code...`);
+    void 0;
     
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -3449,7 +3449,7 @@ socket.on('battle-progress-update', (data) => {
       };
     }
 
-    console.log(`👥 Study room: User ${authUserName} joined room ${roomId}`);
+    void 0;
     io.to(roomId).emit("study-room-updated", serializeRoom(room));
   });
 
@@ -3531,7 +3531,7 @@ socket.on('battle-progress-update', (data) => {
     userSocketMap.set(userId, socket.id);
     socket.userId = userId;
     socket.roomId = roomId;
-     console.log(`👥 User ${userId} joined Room ${roomId}`);
+     void 0;
       
       socket.to(roomId).emit("user-connected", userId);
 
@@ -3578,7 +3578,7 @@ if (process.env.VERCEL !== "1" && process.env.NODE_ENV !== "test") {
 
       server.listen(port, host, () => {
         const url = `http://${host}:${port}`;
-        console.log(`Server running at ${url}`);
+        void 0;
         if (!process.env.SESSION_SECRET) {
           // Fail closed in every environment — a missing secret means tokens
           // would be signed with a forgeable, hardcoded fallback.

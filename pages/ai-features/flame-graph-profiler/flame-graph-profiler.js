@@ -81,7 +81,7 @@ function executeAndProfile() {
 
     const timeoutId = setTimeout(() => {
         cleanup();
-        console.warn("Alert:", `Execution Error: Timeout / Infinite Loop Detected (exceeded ${timeoutMs}ms)`);
+        void 0;
     }, timeoutMs);
 
     worker.onmessage = (e) => {
@@ -92,16 +92,16 @@ function executeAndProfile() {
                 renderFlameGraph(traceData);
                 updateStats(traceData);
             } else {
-                console.warn("Alert:", "No trace data generated. Did you use Tracer.enter() and Tracer.exit()?");
+                void 0;
             }
         } else {
-            console.warn("Alert:", `Execution Error: ${error}`);
+            void 0;
         }
     };
 
     worker.onerror = (err) => {
         cleanup();
-        console.warn("Alert:", `Worker Error: ${err.message}`);
+        void 0;
         console.error(err);
     };
 

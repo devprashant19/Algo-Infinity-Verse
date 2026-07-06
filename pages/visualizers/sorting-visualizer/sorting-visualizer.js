@@ -103,7 +103,7 @@ function playTone(val, type = 'compare') {
       osc.stop(ctx.currentTime + 0.12);
     }
   } catch (e) {
-    console.warn("Audio Context failed to play tone:", e);
+    void 0;
   }
 }
 

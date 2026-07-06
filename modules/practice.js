@@ -55,9 +55,9 @@ function initPracticeSection() {
             else b.classList.remove("active");
           });
           renderProblems();
-          console.warn("Alert:", "AI Recommendation: " + rec.reason + "\n\n" + (rec.aiTip || ""));
-        } else { console.warn("Alert:", "Could not get recommendation."); }
-      } catch (err) { console.error("AI recommend error:", err); console.warn("Alert:", "Failed to fetch recommendation."); }
+          void 0;
+        } else { void 0; }
+      } catch (err) { console.error("AI recommend error:", err); void 0; }
       finally { aiRecommendBtn.innerHTML = '<i class="fas fa-magic"></i> AI Recommend Next'; aiRecommendBtn.disabled = false; }
     });
   }

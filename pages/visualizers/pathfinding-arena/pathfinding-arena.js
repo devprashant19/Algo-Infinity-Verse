@@ -703,6 +703,6 @@ class PathfindingArena {
         const leftVisited = this.leftVisited.length;
         const rightVisited = this.rightVisited.length;
         
-        console.log(`Race Finished! Left Path Cost: ${leftCost}, Nodes Visited: ${leftVisited}. Right Path Cost: ${rightCost}, Nodes Visited: ${rightVisited}.`);
+        void 0;
     }
 }

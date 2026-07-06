@@ -6,7 +6,7 @@ export function initLoadingScreen() {
     const loadingScreen = document.getElementById("loading-screen");
     
     if (!loadingScreen) {
-        console.warn("Loading screen element not found");
+        void 0;
         initializeAnimations();
         return;
     }
@@ -42,7 +42,7 @@ export function initLoadingScreen() {
         
         loadingTimeout = setTimeout(() => {
             if (!isHidden) {
-                console.warn("Loading screen timeout - forcing hide");
+                void 0;
                 hideLoadingScreen();
             }
         }, FALLBACK_TIMEOUT);

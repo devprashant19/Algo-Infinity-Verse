@@ -129,7 +129,7 @@ function updateProfileLeaderboard() {
     .catch(err => {
       apiAbort.clearSignal('profileLeaderboard');
       if (err.name === 'AbortError') return;
-      console.warn("Profile leaderboard load failed:", err);
+      void 0;
       renderProfileLeaderboardFallback(profileLeaderboardList);
     });
 }

@@ -364,7 +364,7 @@ function showNotification(msg, type = 'info') {
     if (window.showNotification) {
         window.showNotification(msg, type);
     } else {
-        console.log(`[Notification] ${type}: ${msg}`);
+        void 0;
     }
 }
 

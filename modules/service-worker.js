@@ -3,7 +3,7 @@ export function initServiceWorker() {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          void 0;
           
           if (registration.waiting) {
             showUpdateToast(registration.waiting);
@@ -19,13 +19,13 @@ export function initServiceWorker() {
           });
         })
         .catch((error) => {
-          console.log('ServiceWorker registration failed: ', error);
+          void 0;
         });
         
       navigator.serviceWorker.addEventListener('message', async (event) => {
         if (event.data && event.data.type === 'PROCESS_OFFLINE_QUEUE') {
           if (window.offlineStore && typeof window.offlineStore.syncQueue === 'function') {
-            console.log('[App] Processing offline action queue...');
+            void 0;
             await window.offlineStore.syncQueue();
           }
         }
@@ -127,7 +127,7 @@ window.rateRecallDifficulty = async function(quality) {
       if (typeof showNotification === 'function') showNotification("Could not schedule on cloud. Saved locally.", "info");
     }
   } catch (err) {
-    console.warn("Spaced repetition sync failed:", err);
+    void 0;
     const q = Math.max(0, Math.min(5, Number(quality)));
     let { repetitions = 0, easeFactor = 2.5, interval = 0 } = existing;
     if (q < 3) {
@@ -180,7 +180,7 @@ window.syncSpacedRepetitionDown = async function() {
       }
     }
   } catch (err) {
-    console.warn("Could not sync spaced repetition down:", err);
+    void 0;
   }
 };
 // Legacy global exports

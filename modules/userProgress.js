@@ -193,7 +193,7 @@ async function syncUserProgress() {
   try {
     await fetch("/api/progress", { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: userProgress.name, xp: userProgress.xp, level: userProgress.level, avatar: userProgress.avatar }) });
       if (typeof updateLeaderboard === 'function') updateLeaderboard();
-  } catch (e) { console.warn("Could not sync user progress:", e); }
+  } catch (e) { void 0; }
 }
 
 async function getAuthenticatedSession() {
@@ -206,7 +206,7 @@ async function getAuthenticatedSession() {
 
 function saveUserData() {
   try { userProgress.lastActive = new Date().toISOString(); localStorage.setItem("algoInfinityVerse", JSON.stringify(userProgress)); queueProgressSync(); }
-  catch (e) { console.warn("Could not save user data:", e); }
+  catch (e) { void 0; }
 }
 
 function loadUserData() {
