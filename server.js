@@ -1019,7 +1019,7 @@ async function handleApi(req, res, pathname) {
 
   if (pathname.startsWith("/api/audit/bulk/") && req.method === "GET") {
     const batchId = pathname.split("/").pop();
-    const progress = getBatchProgress(batchId);
+    const progress = await getBatchProgress(batchId);
     if (!progress) {
       return sendJson(res, 404, { error: "Batch not found." });
     }
