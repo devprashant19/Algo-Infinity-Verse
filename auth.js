@@ -645,13 +645,102 @@
   });
 })();
 
+/**
+ * Shows an in-page confirmation modal for a destructive account action,
+ * replacing the native confirm()/prompt() dialogs this codebase avoids.
+ * Resolves with { confirmed, password } — password is only collected when
+ * requirePassword is true, and is null otherwise or on cancel.
+ */
+function showAccountActionModal({ title, message, confirmText, requirePassword = false }) {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const modal = document.createElement("div");
+    modal.className = "modal active";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 480px;">
+        <div class="modal-header">
+          <h3></h3>
+          <button type="button" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p></p>
+          ${requirePassword ? `
+            <div class="password-field">
+              <label for="accountActionPassword">Confirm your password</label>
+              <input type="password" id="accountActionPassword" placeholder="Enter your password" autocomplete="current-password" />
+              <small id="accountActionPasswordError" class="field-error"></small>
+            </div>
+          ` : ""}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="accountActionCancel">Cancel</button>
+          <button type="button" class="btn btn-danger" id="accountActionConfirm"></button>
+        </div>
+      </div>
+    `;
+    modal.querySelector(".modal-header h3").textContent = title;
+    modal.querySelector(".modal-body p").textContent = message;
+    modal.querySelector("#accountActionConfirm").textContent = confirmText;
+
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector(".modal-close");
+    const cancelBtn = modal.querySelector("#accountActionCancel");
+    const confirmBtn = modal.querySelector("#accountActionConfirm");
+    const passwordInput = modal.querySelector("#accountActionPassword");
+    const passwordError = modal.querySelector("#accountActionPasswordError");
+
+    function settle(result) {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener("keydown", onKeydown);
+      modal.remove();
+      resolve(result);
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") settle({ confirmed: false, password: null });
+    }
+
+    document.addEventListener("keydown", onKeydown);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) settle({ confirmed: false, password: null });
+    });
+    closeBtn.addEventListener("click", () => settle({ confirmed: false, password: null }));
+    cancelBtn.addEventListener("click", () => settle({ confirmed: false, password: null }));
+
+    confirmBtn.addEventListener("click", () => {
+      if (requirePassword) {
+        const password = passwordInput.value;
+        if (!password) {
+          passwordError.textContent = "Password is required.";
+          passwordInput.focus();
+          return;
+        }
+        settle({ confirmed: true, password });
+        return;
+      }
+      settle({ confirmed: true, password: null });
+    });
+
+    setTimeout(() => (passwordInput || confirmBtn).focus(), 50);
+  });
+}
+
 function wireDeactivateAccount() {
   const btn = document.getElementById("deactivateAccountBtn");
 
   if (!btn) return;
 
   btn.addEventListener("click", async () => {
-    const confirmed = false /* confirm removed */;
+    const { confirmed } = await showAccountActionModal({
+      title: "Deactivate Account",
+      message: "Are you sure you want to deactivate your account? You can reactivate it by logging in again.",
+      confirmText: "Deactivate",
+    });
 
     if (!confirmed) return;
 
@@ -690,12 +779,14 @@ function wireDeleteAccount() {
   if (!btn) return;
 
   btn.addEventListener("click", async () => {
-    const confirmed = false /* confirm removed */;
+    const { confirmed, password } = await showAccountActionModal({
+      title: "Delete Account",
+      message: "This will permanently delete your account and all associated data. This action cannot be undone. Enter your password to confirm.",
+      confirmText: "Delete Account",
+      requirePassword: true,
+    });
 
     if (!confirmed) return;
-
-    const password = null /* prompt removed */;
-
     if (!password) return;
 
     try {

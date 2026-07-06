@@ -532,8 +532,36 @@ let progressSyncTimer = null;
 async function syncUserProgress() {
   const session = await getAuthenticatedSession();
   if (!session?.authenticated) return;
+  
+  const payload = { 
+    name: userProgress.name, 
+    xp: userProgress.xp, 
+    level: userProgress.level, 
+    avatar: userProgress.avatar, 
+    activityData: userProgress.activityData 
+  };
+
+  if (!navigator.onLine) {
+    // Queue offline sync
+    let queue = JSON.parse(localStorage.getItem('offlineSyncQueue') || '[]');
+    queue.push(payload);
+    localStorage.setItem('offlineSyncQueue', JSON.stringify(queue));
+    
+    // Register background sync if supported
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready
+        .then(reg => reg.sync.register('sync-offline-actions'))
+        .catch(console.error);
+    }
+    return;
+  }
+
   try {
-    await fetch("/api/progress", { credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: userProgress.name, xp: userProgress.xp, level: userProgress.level, avatar: userProgress.avatar, activityData: userProgress.activityData }) });
+    await fetch("/api/progress", { 
+      credentials: "include", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify(payload) 
+    });
     updateLeaderboard();
   } catch (e) { void 0; }
 }
@@ -704,6 +732,9 @@ async function submitQuizCode() {
     }
     renderTestCases(testCases, result.testResults);
     if (result.allPassed) {
+      if (window.spacedRepetition) {
+        window.spacedRepetition.scheduleReview(problem.id, problem.topic || 'Practice', problem.difficulty || 'Medium', true, 30);
+      }
       if (!userProgress.submittedSolutions) userProgress.submittedSolutions = {};
       userProgress.submittedSolutions[problem.id] = { code: code, lang: lang, date: new Date().toISOString() };
       userProgress.completedProblems.push(problem.id);
@@ -727,6 +758,9 @@ async function submitQuizCode() {
       }
       showNotification("Problem solved! +" + getXPForDifficulty(difficulty) + " XP. Rate recall difficulty below.", "success");
     } else {
+      if (window.spacedRepetition) {
+        window.spacedRepetition.scheduleReview(problem.id, problem.topic || 'Practice', problem.difficulty || 'Medium', false, 30);
+      }
       const failures = result.testResults.filter(r => r && !r.passed);
       setOutput(failures.length + " / " + result.testResults.length + " tests failed. Fix the issues and try again.", "error");
       showNotification(failures.length + " test(s) failed. Keep trying!", "error");

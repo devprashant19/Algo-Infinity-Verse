@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
+import {
+  hashPassword as hashPasswordSecure,
+  passwordMatches as passwordMatchesSecure,
+} from "../services/auth.service.js";
 
 export const SESSION_COOKIE = "aiv_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
@@ -213,13 +217,13 @@ export async function createUser(userData, useFirestore = false, db = null) {
   return userData;
 }
 
-// Password Functions (placeholder)
+// Password Functions — delegate to the PBKDF2 implementation in
+// auth.service.js so every caller gets real hashing/verification instead of
+// storing and comparing plaintext passwords.
 export function hashPassword(password) {
-  // Implement actual password hashing
-  return password; // Placeholder
+  return hashPasswordSecure(password);
 }
 
-export function passwordMatches(password, hash) {
-  // Implement actual password verification
-  return password === hash; // Placeholder
+export function passwordMatches(password, stored) {
+  return passwordMatchesSecure(password, stored);
 }

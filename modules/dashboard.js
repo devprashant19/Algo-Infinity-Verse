@@ -33,6 +33,7 @@ function updateDashboard() {
     updateRecentProblems();
     updateRecommendations();
     updateLeaderboard();
+    updateReviewQueueWidget();
     
     const grid = document.querySelector(".dashboard-grid");
     if (grid && !document.getElementById("personalityCard")) {
@@ -685,6 +686,14 @@ function positionHeatmapTooltip(e) {
 }
 
 window.renderActivityHeatmap = renderActivityHeatmap;
+
+function updateReviewQueueWidget() {
+    const countEl = document.getElementById('reviewQueueCount');
+    if (countEl && window.spacedRepetition) {
+        const dueItems = window.spacedRepetition.getDueItems();
+        countEl.textContent = dueItems.length;
+    }
+}
 
 export {
     initDashboard,

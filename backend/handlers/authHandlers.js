@@ -1,58 +1,15 @@
 import crypto from "crypto";
-import { 
-  getSession, sendJson, readJsonBody, createSessionToken, 
-  sessionCookie, clearSessionCookie, getClientIdentifier,
+import {
+  getSession, sendJson, readJsonBody, createSessionToken,
+  sessionCookie, clearSessionCookie,
   readUsers, writeUsers, getUserByEmail, createUser,
   hashPassword, passwordMatches, normalizeAuthDelay
 } from "../utils/helpers.js";
-
-// Rate limiting setup
-const SIGNUP_RATE_LIMIT = 5;
-const SIGNUP_WINDOW_MS = 15 * 60 * 1000;
-const signupAttempts = new Map();
-
-const LOGIN_RATE_LIMIT = 5;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const loginFailures = new Map();
+import { getClientIdentifier } from "../services/auth.service.js";
+import { applyRateLimit, signupLimiter, loginLimiter } from "../utils/rateLimiter.js";
 
 let db = null;
 let useFirestore = false;
-
-function isSignupRateLimited(identifier) {
-  const now = Date.now();
-  const attempts = signupAttempts.get(identifier) || [];
-  const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
-  signupAttempts.set(identifier, recentAttempts);
-  return recentAttempts.length >= SIGNUP_RATE_LIMIT;
-}
-
-function recordSignupAttempt(identifier) {
-  const now = Date.now();
-  const attempts = signupAttempts.get(identifier) || [];
-  const recentAttempts = attempts.filter((t) => now - t < SIGNUP_WINDOW_MS);
-  recentAttempts.push(now);
-  signupAttempts.set(identifier, recentAttempts);
-}
-
-function isLoginRateLimited(identifier) {
-  const now = Date.now();
-  const attempts = loginFailures.get(identifier) || [];
-  const recent = attempts.filter((t) => now - t < LOGIN_WINDOW_MS);
-  loginFailures.set(identifier, recent);
-  return recent.length >= LOGIN_RATE_LIMIT;
-}
-
-function recordLoginFailure(identifier) {
-  const now = Date.now();
-  const attempts = loginFailures.get(identifier) || [];
-  const recent = attempts.filter((t) => now - t < LOGIN_WINDOW_MS);
-  recent.push(now);
-  loginFailures.set(identifier, recent);
-}
-
-function clearLoginFailures(identifier) {
-  loginFailures.delete(identifier);
-}
 
 function validateSignup({ name, email, password, confirmPassword }) {
   const cleanName = String(name || "").trim();
@@ -93,16 +50,9 @@ export async function handleGuestLogin(req, res) {
 }
 
 export async function handleSignup(req, res) {
-  const clientId = getClientIdentifier(req);
-
-  if (isSignupRateLimited(clientId)) {
-    await normalizeAuthDelay();
-    return sendJson(res, 429, {
-      error: "Too many signup attempts. Please try again later.",
-    });
+  if (!applyRateLimit(req, res, signupLimiter, "Too many signup attempts. Please try again later.")) {
+    return;
   }
-
-  recordSignupAttempt(clientId);
 
   const payload = await readJsonBody(req);
   const validationError = validateSignup(payload);
@@ -164,16 +114,15 @@ export async function handleLogin(req, res) {
     : (await readUsers()).find((candidate) => candidate.email === email);
 
   if (!user || !passwordMatches(password, user.password)) {
-    recordLoginFailure(clientId);
     await normalizeAuthDelay();
     return sendJson(res, 401, { error: "Invalid email or password." });
   }
-  
+
   if (user.isDeactivated) {
     user.isDeactivated = false;
     user.deactivatedAt = null;
   }
-  
+
   if (!useFirestore) {
     const users = await readUsers();
     const index = users.findIndex((u) => u.id === user.id);
@@ -183,7 +132,7 @@ export async function handleLogin(req, res) {
     }
   }
 
-  clearLoginFailures(clientId);
+  loginLimiter.reset(getClientIdentifier(req));
 
   const token = createSessionToken(user);
   return sendJson(

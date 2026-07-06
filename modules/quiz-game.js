@@ -141,6 +141,11 @@ function selectQuizAnswer(selectedIndex) {
   clearInterval(quizTimerInterval);
   const question = currentQuiz.questions[currentQuiz.currentQuestionIndex];
   const isCorrect = selectedIndex === question.correct;
+  
+  if (window.spacedRepetition) {
+    window.spacedRepetition.scheduleReview(question.id, currentQuiz.topic || 'Quiz', 'Medium', isCorrect, 30);
+  }
+
   currentQuiz.answers.push({ questionId: question.id, selected: selectedIndex, correct: question.correct, isCorrect: isCorrect });
   if (isCorrect) currentQuiz.score++;
   const optionsEl = document.getElementById("topicQuizOptions");

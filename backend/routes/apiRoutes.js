@@ -6,6 +6,7 @@ import { handleAnalyzeResume } from '../handlers/resumeHandlers.js';
 import { handleSubmitFeedback } from '../handlers/feedbackHandlers.js';
 import { handleSubmitInterviewExperience } from '../handlers/interviewHandlers.js';
 import { handleMemoryLog, handleMemoryDue, handleMemoryAll } from '../handlers/memoryHandlers.js';
+import { handleUserPersonality } from '../handlers/personalityHandlers.js';
 
 export function setupApiRoutes(req, res, pathname) {
   // Guest Login
@@ -62,6 +63,11 @@ export function setupApiRoutes(req, res, pathname) {
   }
   if (pathname === "/api/memory/all" && req.method === "GET") {
     return handleMemoryAll(req, res);
+  }
+
+  // Coding Personality
+  if (pathname === "/api/user/personality" && req.method === "GET") {
+    return handleUserPersonality(req, res);
   }
 
   return null;
