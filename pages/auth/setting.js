@@ -24,7 +24,7 @@ const saveBtn = document.querySelector(".btn");
 
 if (saveBtn) {
     saveBtn.addEventListener("click", function () {
-        void 0;
+        alert("Changes saved successfully!");
     });
 }
 
@@ -49,16 +49,16 @@ if (buttons.length > 1) {
             newPassword === "" ||
             confirmPassword === ""
         ) {
-            void 0;
+            alert("Please fill in all password fields.");
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            void 0;
+            alert("Passwords do not match. Please try again.");
             return;
         }
 
-        void 0;
+        alert("Password updated successfully!");
     });
 }
 
@@ -72,7 +72,9 @@ toggles.forEach(toggle => {
 
     toggle.addEventListener("change", function () {
 
-        void 0;
+        console.log(
+            this.checked ? "Enabled" : "Disabled"
+        );
 
     });
 
@@ -86,7 +88,7 @@ if (deleteBtn) {
         const confirmDelete = false /* confirm removed */;
 
         if (confirmDelete) {
-            void 0;
+            alert("Account deletion is handled server-side. Please contact support to complete this action.");
             
         }
     });

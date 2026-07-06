@@ -125,7 +125,7 @@ function playSound(type) {
       osc.stop(now + 0.05);
     }
   } catch (e) {
-    void 0;
+    console.warn("Audio synthesis error:", e);
   }
 }
 
@@ -295,7 +295,7 @@ function renderGraph() {
           renderGraph();
           addLogEntry(`Updated edge ${targetEdge.source} &rarr; ${targetEdge.target} (Capacity: ${cap}).`, "sys");
         } else {
-          void 0;
+          addLogEntry('Invalid capacity. Enter a positive integer.', 'warn');
         }
       }
     });
@@ -413,7 +413,7 @@ svg.addEventListener("mousedown", (e) => {
   const y = e.clientY - rect.top;
 
   if (nextLabelCode > 90) {
-    void 0;
+    addLogEntry('Node limit reached — maximum 26 nodes (A–Z) per graph.', 'warn');
     return;
   }
 
@@ -938,7 +938,7 @@ function runSimulation() {
   const sourceNode = nodes.find((n) => n.isSource);
   const sinkNode = nodes.find((n) => n.isSink);
   if (!sourceNode || !sinkNode) {
-    void 0;
+    addLogEntry('Please right-click a node and designate both a Source (S) and a Sink (T) before running.', 'warn');
     return;
   }
 

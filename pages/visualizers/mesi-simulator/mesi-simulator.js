@@ -81,7 +81,10 @@ function bindEvents() {
         
         // Validate Hex
         if (!/^[0-9A-F]{1,2}$/.test(data)) {
-            return void 0;
+            logMsg('Invalid data: enter 1 or 2 hex digits (e.g. FF).', 'warn');
+            els.inputData.style.borderColor = '#ef4444';
+            setTimeout(() => { els.inputData.style.borderColor = ''; }, 2000);
+            return;
         }
         if (data.length === 1) data = "0" + data; // Pad to 2 chars
 

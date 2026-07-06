@@ -197,7 +197,7 @@ class CodeExecutor {
                 this.output.push(output);
                 this.addTrace(`📤 Output: ${output}`);
                 // Also show in console
-                void 0;
+                console.log(output);
                 return;
             }
         }
@@ -823,7 +823,14 @@ function renderCertificatesDashboard(tracks) {
         // Automatically uses structural records cleanly 
         downloadCertificatePDF("Prasiddhi Mishra", track.topicName, track.completionDate, track.certificateId);
       } else {
-        void 0;
+        downloadBtn.textContent = '⚠ Track not completed';
+        downloadBtn.style.background = '#6b7280';
+        downloadBtn.disabled = true;
+        setTimeout(() => {
+          downloadBtn.textContent = 'Download PDF';
+          downloadBtn.style.background = '#667eea';
+          downloadBtn.disabled = false;
+        }, 3000);
       }
     });
 
