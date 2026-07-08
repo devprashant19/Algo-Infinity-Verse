@@ -257,12 +257,20 @@ async function getUserByEmail(email) {
   return { ...snapshot.docs[0].data(), id: snapshot.docs[0].id };
 }
 
+let userWriteQueue = Promise.resolve();
+
 async function createUser(userData) {
   if (!useFirestore) {
-    const users = await readUsers();
-    users.push(userData);
-    await writeUsers(users);
-    return userData;
+    const task = userWriteQueue.then(async () => {
+      const users = await readUsers();
+      users.push(userData);
+      await writeUsers(users);
+      return userData;
+    });
+    userWriteQueue = task.catch((err) => {
+      console.error("[createUser] Write task failed:", err);
+    });
+    return task;
   }
   const docRef = await db.collection(COLLECTIONS.USERS).add(userData);
   return { ...userData, id: docRef.id };
@@ -307,7 +315,9 @@ async function readUsers() {
 async function writeUsers(users) {
   await ensureUserStore();
   try {
-    await fs.writeFile(USERS_FILE, `${JSON.stringify(users, null, 2)}\n`);
+    const tmpPath = `${USERS_FILE}.${process.pid}.${Date.now()}.tmp`;
+    await fs.writeFile(tmpPath, `${JSON.stringify(users, null, 2)}\n`);
+    await fs.rename(tmpPath, USERS_FILE);
     userCacheDirty = true;
   } catch (err) {
     console.error("[writeUsers] Failed to write users:", err);
