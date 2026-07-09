@@ -67,6 +67,7 @@ const visualizers = [
   { name: "Concurrency Simulator", path: "/pages/visualizers/concurrency-simulator/concurrency-simulator.html", category: "Systems & OS", icon: "fa-layer-group", desc: "Simulate threads, locks, semaphores, and race conditions." },
   { name: "Lock-Free Playground", path: "/pages/visualizers/lock-free-playground/lock-free-playground.html", category: "Systems & OS", icon: "fa-atom", desc: "Explore lock-free data structures with CAS operations visualized." },
   { name: "TCP Visualizer", path: "/pages/visualizers/tcp-visualizer/tcp-visualizer.html", category: "Systems & OS", icon: "fa-envelope", desc: "Visualize TCP handshake, congestion control, and flow control." },
+  { name: "QUIC & HTTP/3 Simulator", path: "/pages/visualizers/quic-simulator/quic-simulator.html", category: "Systems & OS", icon: "fa-network-wired", desc: "Interactive simulator comparing TCP/TLS handshakes against QUIC's 0-RTT." },
   { name: "Git Visualizer", path: "/pages/ai-features/git-visualizer/git-visualizer.html", category: "Systems & OS", icon: "fa-code-branch", desc: "Visualize Git internals: commits, branches, merges, and the DAG commit graph." },
 
   // ── CPU Scheduling ──
