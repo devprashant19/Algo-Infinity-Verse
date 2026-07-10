@@ -33,7 +33,7 @@
             </div>
             
             <div class="terminal-container" id="terminalContainer">
-                <div class="terminal-output" id="terminalOutput">
+                <div class="terminal-output" id="terminalOutput" aria-live="polite" aria-relevant="additions">
                     <div class="log-info">Welcome to the Git DAG Simulator!</div>
                     <div class="log-info">Available commands:</div>
                     <div class="log-info">  git commit -m "msg"</div>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="terminal-input-line">
                     <span class="prompt">user@algo-verse:~/repo$</span>
-                    <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" autofocus />
+                    <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" aria-label="Git command input" />
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
         <div class="panel-right">
             <div class="viz-header">
                 <h2><i class="fas fa-project-diagram"></i> Commit DAG</h2>
-                <div class="head-status">HEAD -> <span id="headTarget" class="text-accent">main</span></div>
+                <div class="head-status">HEAD -&gt; <span id="headTarget" class="text-accent">main</span></div>
             </div>
             
             <div class="canvas-container">
