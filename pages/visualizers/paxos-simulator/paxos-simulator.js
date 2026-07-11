@@ -291,8 +291,15 @@ function render() {
         ctx.fillText("NETWORK PARTITION", 70, 280);
     }
 
-    // Update and draw packets
-    packets = packets.filter(p => !p.update());
+    // Update packets; new packets created during delivery are pushed
+    // to the new `packets` array by sendPacket, so they survive the frame.
+    const currentPackets = packets;
+    packets = [];
+    for (const p of currentPackets) {
+        if (!p.update()) {
+            packets.push(p);
+        }
+    }
     packets.forEach(p => p.draw(ctx));
 
     // Draw nodes
