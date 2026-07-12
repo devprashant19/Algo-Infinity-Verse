@@ -83,6 +83,7 @@ const visualizers = [
 
   // ── Distributed Systems ──
   { name: "Raft Simulator", path: "/pages/ai-features/raft-simulator/raft-simulator.html", category: "Distributed Systems", icon: "fa-anchor", desc: "Interactive Raft consensus algorithm: leader election and log replication." },
+  { name: "SWIM Gossip Protocol Simulator", path: "/pages/visualizers/swim-simulator/swim-simulator.html", category: "Distributed Systems", icon: "fa-share-nodes", desc: "Distributed cluster membership, failure detection, and ping-req probes." },
   { name: "PBFT Simulator", path: "/pages/visualizers/pbft-simulator/pbft-simulator.html", category: "Distributed Systems", icon: "fa-shield-halved", desc: "Practical Byzantine Fault Tolerance consensus visualized." },
   { name: "Consistent Hashing Visualizer", path: "/pages/visualizers/consistent-hashing-visualizer/consistent-hashing-visualizer.html", category: "Distributed Systems", icon: "fa-bullseye", desc: "Distribute keys across nodes with consistent hashing ring." },
   { name: "Kafka Simulator", path: "/pages/visualizers/kafka-simulator/kafka-simulator.html", category: "Distributed Systems", icon: "fa-envelope", desc: "Simulate Apache Kafka topics, partitions, and consumer groups." },
