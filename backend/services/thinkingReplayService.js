@@ -1,7 +1,204 @@
+// backend/services/thinkingReplayService.js
+
 const OpenAI = require('openai');
+const crypto = require('crypto');
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const DEFAULT_CONFIG = {
+  model: 'gpt-4-turbo-preview',
+  temperature: 0.3,
+  maxTokens: 2000,
+  maxRetries: 3,
+  timeout: 30000, // 30 seconds
+  enableCache: true,
+  cacheTTL: 3600000, // 1 hour
+};
+
+// ============================================
+// VALIDATION FUNCTIONS
+// ============================================
+
+/**
+ * Validate snapshots array
+ */
+function validateSnapshots(snapshots) {
+  if (!Array.isArray(snapshots) || snapshots.length === 0) {
+    return {
+      valid: false,
+      error: 'snapshots array is required and must not be empty.',
+    };
+  }
+
+  for (let i = 0; i < snapshots.length; i++) {
+    const s = snapshots[i];
+    if (!s.timestamp) {
+      return {
+        valid: false,
+        error: `snapshot ${i} missing timestamp.`,
+      };
+    }
+    if (typeof s.code !== 'string') {
+      return {
+        valid: false,
+        error: `snapshot ${i} code must be a string.`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate events array
+ */
+function validateEvents(events) {
+  if (!Array.isArray(events)) {
+    return {
+      valid: false,
+      error: 'events must be an array.',
+    };
+  }
+
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    if (!e.type) {
+      return {
+        valid: false,
+        error: `event ${i} missing type.`,
+      };
+    }
+    if (!e.timestamp) {
+      return {
+        valid: false,
+        error: `event ${i} missing timestamp.`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate submissions array
+ */
+function validateSubmissions(submissions) {
+  if (!Array.isArray(submissions)) {
+    return {
+      valid: false,
+      error: 'submissions must be an array.',
+    };
+  }
+
+  for (let i = 0; i < submissions.length; i++) {
+    const s = submissions[i];
+    if (!s.status) {
+      return {
+        valid: false,
+        error: `submission ${i} missing status.`,
+      };
+    }
+    if (!s.timestamp) {
+      return {
+        valid: false,
+        error: `submission ${i} missing timestamp.`,
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate response schema
+ */
+function validateResponseSchema(replay) {
+  const required = [
+    'timeline',
+    'reasoningSummary',
+    'strategyComparison',
+    'performanceAnalysis',
+    'strategyTags',
+  ];
+
+  const missing = required.filter((field) => !replay[field]);
+
+  if (missing.length > 0) {
+    return {
+      valid: false,
+      error: `Missing required fields: ${missing.join(', ')}`,
+    };
+  }
+
+  if (!Array.isArray(replay.timeline) || replay.timeline.length === 0) {
+    return {
+      valid: false,
+      error: 'timeline must be a non-empty array.',
+    };
+  }
+
+  return { valid: true };
+}
+
+// ============================================
+// CACHE MANAGER
+// ============================================
+
+class CacheManager {
+  constructor(ttl = DEFAULT_CONFIG.cacheTTL) {
+    this.cache = new Map();
+    this.ttl = ttl;
+  }
+
+  generateKey(data) {
+    const str = JSON.stringify(data);
+    return crypto.createHash('sha256').update(str).digest('hex');
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.value;
+  }
+
+  set(key, value) {
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + this.ttl,
+    });
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  getStats() {
+    return {
+      size: this.cache.size,
+      ttl: this.ttl,
+    };
+  }
+}
+
+// ============================================
+// THINKING REPLAY SERVICE
+// ============================================
 
 class ThinkingReplayService {
-  constructor() {
+  constructor(config = {}) {
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...config,
+    };
+
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
@@ -9,7 +206,36 @@ class ThinkingReplayService {
 
   async generateReplay(snapshots, events, submissions) {
     try {
-      // 1. Prepare data for AI
+      // 1. Validate inputs
+      const snapshotsValidation = validateSnapshots(snapshots);
+      if (!snapshotsValidation.valid) {
+        throw new Error(snapshotsValidation.error);
+      }
+
+      const eventsValidation = validateEvents(events);
+      if (!eventsValidation.valid) {
+        throw new Error(eventsValidation.error);
+      }
+
+      const submissionsValidation = validateSubmissions(submissions);
+      if (!submissionsValidation.valid) {
+        throw new Error(submissionsValidation.error);
+      }
+
+      // 2. Check cache
+      const cacheKey = this.cache.generateKey({ snapshots, events, submissions });
+      const cachedResult = this.cache.get(cacheKey);
+
+      if (cachedResult && this.config.enableCache) {
+        console.log('[ThinkingReplay] Cache hit');
+        this.stats.cachedResponses++;
+        return {
+          ...cachedResult,
+          fromCache: true,
+        };
+      }
+
+      // 3. Prepare data
       const analysisData = this.prepareAnalysisData(snapshots, events, submissions);
       
       // 2. Generate prompt for AI
@@ -31,25 +257,40 @@ class ThinkingReplayService {
       
       return replay;
     } catch (error) {
-      console.error('AI Replay generation failed:', error);
-      return this.generateFallbackReplay(snapshots);
+      console.log(`[ThinkingReplay] Attempt ${attempt}/${maxRetries} failed:`, error.message);
+
+      if (attempt < maxRetries) {
+        const delay = 1000 * Math.pow(2, attempt - 1); // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.callAIWithRetry(prompt, options, attempt + 1);
+      }
+
+      throw error;
     }
   }
 
+  /**
+   * Prepare analysis data with metadata
+   */
   prepareAnalysisData(snapshots, events, submissions) {
+    const duration =
+      snapshots.length > 0
+        ? new Date(snapshots[snapshots.length - 1].timestamp) - new Date(snapshots[0].timestamp)
+        : 0;
+
     return {
-      snapshots: snapshots.map(s => ({
+      snapshots: snapshots.map((s) => ({
         timestamp: s.timestamp,
         code: s.code,
         status: s.status,
         executionTime: s.execution_time,
         errors: s.errors
       })),
-      events: events.map(e => ({
+      events: events.map((e) => ({
         type: e.type,
-        timestamp: e.timestamp
+        timestamp: e.timestamp,
       })),
-      submissions: submissions.map(s => ({
+      submissions: submissions.map((s) => ({
         status: s.status,
         timestamp: s.timestamp,
         results: s.results
@@ -57,8 +298,13 @@ class ThinkingReplayService {
     };
   }
 
-  buildPrompt(data) {
-    return `
+  /**
+   * Build prompt with optional custom instructions
+   */
+  buildPrompt(data, options = {}) {
+    const maxCodeLength = options.maxCodeLength || 500;
+
+    let prompt = `
 Analyze this coding session and reconstruct the thinking process.
 
 Snapshots (chronological):
@@ -83,7 +329,7 @@ Generate response as JSON:
 {
   "timeline": [
     {
-      "timestamp": "10:03",
+      "timestamp": "10:03:21",
       "strategy": "Brute Force",
       "reasoning": "Started with simplest approach",
       "code": "// code snippet",
@@ -97,25 +343,37 @@ Generate response as JSON:
     "improvement": "Reduced time from O(n²) to O(n)"
   },
   "performanceAnalysis": {
-    "optimizations": ["Removed nested loops", "Used prefix sum"],
+    "optimizations": ["Removed nested loops"],
     "suggestions": ["Consider DP approach"],
     "timeComplexity": "O(n)",
     "spaceComplexity": "O(1)"
   },
-  "strategyTags": ["brute_force", "sliding_window", "prefix_sum"]
+  "strategyTags": ["brute_force", "sliding_window"]
 }`;
+
+    if (options.customPrompt) {
+      prompt += `\n\n${options.customPrompt}`;
+    }
+
+    return prompt;
   }
 
+  /**
+   * Parse AI response with fallback
+   */
   parseResponse(response) {
     try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const content = response.choices[0].message.content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
-      return this.generateFallbackReplay();
+
+      throw new Error('No JSON found in AI response');
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      return this.generateFallbackReplay();
+      console.error('[ThinkingReplay] Parse error:', error);
+      throw error;
     }
   }
 
@@ -132,13 +390,13 @@ Generate response as JSON:
       strategyComparison: {
         from: 'Initial',
         to: 'Final',
-        improvement: 'Improved solution'
+        improvement: 'Improved solution',
       },
       performanceAnalysis: {
         optimizations: ['Code improvements'],
         suggestions: ['Review alternative approaches'],
         timeComplexity: 'O(n)',
-        spaceComplexity: 'O(1)'
+        spaceComplexity: 'O(1)',
       },
       strategyTags: ['initial', 'final']
     };
