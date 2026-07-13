@@ -597,6 +597,13 @@ const visualizers = [
     icon: 'fa-chart-line',
     desc: 'Peer-to-peer skip graph for efficient distributed search.',
   },
+  {
+    name: 'Rsync Simulator',
+    path: '/pages/visualizers/rsync-simulator/rsync-simulator.html',
+    category: 'Distributed Systems',
+    icon: 'fa-clone',
+    desc: 'Simulate the Rsync algorithm showing rolling hashes and delta transfers.',
+  },
 
   // ── Security & Cryptography ──
   {
