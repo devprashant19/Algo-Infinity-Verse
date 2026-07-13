@@ -425,6 +425,18 @@ const visualizers = [
     icon: 'fa-code-branch',
     desc: 'Visualize Git internals: commits, branches, merges, and the DAG commit graph.',
   },
+  {
+    name: 'ARIES Recovery Simulator',
+    path: '/pages/visualizers/aries-simulator/aries-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-database',
+    desc: 'Visualize ARIES database recovery: Analysis, Redo, and Undo phases.',
+    name: 'Spanning Tree Protocol (STP)',
+    path: '/pages/visualizers/stp-simulator/stp-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-network-wired',
+    desc: 'Simulate STP to prevent network loops and elect root bridges.',
+  },
 
   // ── CPU Scheduling ──
   {
@@ -823,6 +835,13 @@ const visualizers = [
     desc: 'Relational database internals: B-trees, pages, and query planning.',
   },
   {
+    name: 'Memory Layout Explorer',
+    path: '/pages/visualizers/data-structure-memory-layout-explorer/data-structure-memory-layout-explorer.html',
+    category: 'Data Structures',
+    icon: 'fa-memory',
+    desc: 'See how arrays, linked lists, trees, hash tables, queues, and stacks are laid out in memory.',
+  },
+  {
     name: 'SDLC Visualizer',
     path: '/pages/visualizers/sdlc-visualizer/sdlc-visualizer.html',
     category: 'Data Structures',
@@ -835,6 +854,13 @@ const visualizers = [
     category: 'Data Structures',
     icon: 'fa-sitemap',
     desc: 'Explore Hierarchical Navigable Small World graphs for approximate nearest neighbor search.',
+  },
+  {
+    name: 'Cuckoo Hashing Visualizer',
+    path: '/pages/visualizers/cuckoo-hashing-visualizer/cuckoo-hashing-visualizer.html',
+    category: 'Data Structures',
+    icon: 'fa-table-cells',
+    desc: 'Guaranteed O(1) worst-case lookup via two tables and eviction chains.',
   },
 
   // ── Special & Creative ──
