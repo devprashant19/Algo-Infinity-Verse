@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { escapeHtml } from '../../modules/domSanitizer.js';
 
 // ============================================
 // CONFIGURABLE SETTINGS
@@ -40,9 +41,9 @@ class BrowserManager {
           '--disable-dev-shm-usage',
           '--disable-gpu',
           '--disable-software-rasterizer',
-          '--disable-extensions'
+          '--disable-extensions',
         ],
-        timeout: 30000
+        timeout: 30000,
       });
 
       this.browserInstance.on('disconnected', () => {
@@ -80,7 +81,7 @@ class BrowserManager {
       await page.close();
       this.activePages = Math.max(0, this.activePages - 1);
       console.log(`Page closed (${this.activePages} pages active)`);
-      
+
       if (this.activePages === 0) {
         this.startIdleTimer();
       }
@@ -128,7 +129,7 @@ class BrowserManager {
 
   async forceClose() {
     console.log('Force closing browser...');
-    
+
     if (this.browserInstance) {
       try {
         const pages = await this.browserInstance.pages();
@@ -155,7 +156,7 @@ class BrowserManager {
       activePages: this.activePages,
       isClosing: this.isClosing,
       idleTimeout: this.idleTimeout,
-      maxPages: this.maxPages
+      maxPages: this.maxPages,
     };
   }
 }
@@ -190,13 +191,16 @@ process.on('uncaughtException', async (error) => {
 // REPORT GENERATION FUNCTIONS
 // ============================================
 
-function buildHtmlTemplate(user, data) {
+function buildHtmlTemplate(user, _data) {
+  const safeName = escapeHtml(user.name);
+  const safeEmail = escapeHtml(user.email);
+
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Audit Report - ${user.name}</title>
+        <title>Audit Report - ${safeName}</title>
         <style>
             @media print {
                 body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; margin: 0; padding: 20px; }
@@ -214,8 +218,8 @@ function buildHtmlTemplate(user, data) {
     <body>
         <h1>Professional Profile & Audit Report</h1>
         <div class="section">
-            <p><span class="metric">Name:</span> ${user.name}</p>
-            <p><span class="metric">Email:</span> ${user.email}</p>
+            <p><span class="metric">Name:</span> ${safeName}</p>
+            <p><span class="metric">Email:</span> ${safeEmail}</p>
             <p><span class="metric">Generated At:</span> ${new Date().toLocaleString()}</p>
         </div>
         <div class="section">
@@ -235,10 +239,10 @@ export async function handleReportRequest(req, res, pathname, session) {
 
   const type = pathname === '/api/reports/export/pdf' ? 'pdf' : 'image';
   let page = null;
-  
+
   try {
     page = await browserManager.createPage();
-    
+
     const mockData = {};
     const html = buildHtmlTemplate(session, mockData);
     await page.setContent(html, { waitUntil: 'networkidle0' });
@@ -247,36 +251,33 @@ export async function handleReportRequest(req, res, pathname, session) {
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
-        margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+        margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
       });
-      
+
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="report_${session.sub}.pdf"`,
-        'Content-Length': pdfBuffer.length
+        'Content-Length': pdfBuffer.length,
       });
       return res.end(pdfBuffer);
-      
     } else {
       const imageBuffer = await page.screenshot({
         type: 'png',
         fullPage: true,
-        deviceScaleFactor: 2
+        deviceScaleFactor: 2,
       });
-      
+
       res.writeHead(200, {
         'Content-Type': 'image/png',
         'Content-Disposition': `attachment; filename="report_${session.sub}.png"`,
-        'Content-Length': imageBuffer.length
+        'Content-Length': imageBuffer.length,
       });
       return res.end(imageBuffer);
     }
-    
   } catch (error) {
     console.error('Report generation error:', error);
     res.writeHead(500, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'Failed to generate report' }));
-    
   } finally {
     if (page && !page.isClosed()) {
       await browserManager.closePage(page);
@@ -289,4 +290,4 @@ export async function handleReportRequest(req, res, pathname, session) {
 // ============================================
 
 export default browserManager;
-export { BrowserManager, browserManager };
+export { BrowserManager, browserManager, buildHtmlTemplate };

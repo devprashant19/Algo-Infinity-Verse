@@ -431,6 +431,8 @@ const visualizers = [
     category: 'Systems & OS',
     icon: 'fa-database',
     desc: 'Visualize ARIES database recovery: Analysis, Redo, and Undo phases.',
+  },
+  {
     name: 'Spanning Tree Protocol (STP)',
     path: '/pages/visualizers/stp-simulator/stp-simulator.html',
     category: 'Systems & OS',
@@ -503,6 +505,13 @@ const visualizers = [
     category: 'Distributed Systems',
     icon: 'fa-shield-halved',
     desc: 'Practical Byzantine Fault Tolerance consensus visualized.',
+  },
+  {
+    name: 'Load Balancer Visualizer',
+    path: '/pages/visualizers/load-balancer-visualizer/load-balancer-visualizer.html',
+    category: 'Distributed Systems',
+    icon: 'fa-network-wired',
+    desc: 'Visualize real-time traffic distribution across backend servers using diverse algorithms, with failure simulations.',
   },
   {
     name: 'Consistent Hashing Visualizer',
@@ -862,7 +871,14 @@ const visualizers = [
     icon: 'fa-table-cells',
     desc: 'Guaranteed O(1) worst-case lookup via two tables and eviction chains.',
   },
-    {
+  {
+    name: 'LSH Visualizer',
+    path: '/pages/visualizers/lsh-visualizer/lsh-visualizer.html',
+    category: 'Algorithms',
+    icon: 'fa-fingerprint',
+    desc: 'Locality-Sensitive Hashing — MinHash signatures, banding, and approximate nearest-neighbor search without comparing all pairs.',
+  },
+  {
     name: 'Rope Data Structure Visualizer',
     path: '/pages/visualizers/rope-data-structure-visualizer/rope-data-structure-visualizer.html',
     category: 'Data Structures',
@@ -1010,6 +1026,21 @@ const visualizers = [
     category: 'Systems & OS',
     icon: 'fa-globe',
     desc: 'Interactive simulator tracing recursive DNS queries.',
+    name: 'Consistent Hashing Visualizer',
+    path: '/pages/visualizers/consistent-hashing-simulator/consistent-hashing-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-server',
+    desc: 'Interactive hash ring showing node distribution and key routing.',
+    name: 'gRPC & HTTP/2 Multiplexing Visualizer',
+    path: '/pages/visualizers/grpc-simulator/grpc-simulator.html',
+    category: 'Architecture',
+    icon: 'fa-network-wired',
+    desc: 'Compare HTTP/1.1 REST to HTTP/2 multiplexed streams and Protocol Buffers.',
+    name: 'WebRTC Signaling & ICE Simulator',
+    path: '/pages/visualizers/webrtc-simulator/webrtc-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-tower-broadcast',
+    desc: 'Visualize Peer-to-Peer connections, STUN hole-punching, and TURN relays.',
   },
 ];
 
