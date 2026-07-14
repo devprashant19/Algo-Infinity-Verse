@@ -1004,6 +1004,13 @@ const visualizers = [
     icon: 'fa-eye',
     desc: 'Spectre side-channel attack — speculative execution visualized.',
   },
+  {
+    name: 'DNS Resolution Simulator',
+    path: '/pages/visualizers/dns-simulator/dns-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-globe',
+    desc: 'Interactive simulator tracing recursive DNS queries.',
+  },
 ];
 
 /* ─── Categories ─── */
