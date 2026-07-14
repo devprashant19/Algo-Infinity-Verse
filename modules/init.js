@@ -1,7 +1,7 @@
 import { initLoadingScreen } from './loading.js';
 import { initNavbar } from './navbar.js';
 import { initHeroSection } from './hero.js';
-import { initTopicOfTheDay, initTopicsSection } from './topics.js';
+import { initTopicOfTheDay } from './topics.js';
 import { initQuizSection } from './quiz-game.js';
 
 import { initRoadmap } from './roadmap.js';
@@ -101,7 +101,6 @@ function initializeApp() {
   initNavbar();
   initHeroSection();
   initTopicOfTheDay();
-  initTopicsSection();
   initQuizSection();
 
   initRoadmap();

@@ -170,10 +170,6 @@
       message: "Login to access roadmap steps, quizzes, and challenges.",
     },
     {
-      selector: ".interview-card button.card-btn",
-      message: "Login to access Technical Interview practice.",
-    },
-    {
       selector: ".dashboard-card a[href='/pages/career/resume/resume.html']",
       message: "Login to view your coding resume.",
     },
@@ -213,7 +209,6 @@
     "#searchInput",
     "#authGateModal",
     ".auth-gate-modal-content",
-    ".interview-card a.card-btn",
   ];
 
   // Main click interceptor
