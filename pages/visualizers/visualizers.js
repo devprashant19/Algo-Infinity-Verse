@@ -1062,6 +1062,13 @@ const visualizers = [
     icon: 'fa-tower-broadcast',
     desc: 'Visualize Peer-to-Peer connections, STUN hole-punching, and TURN relays.',
   },
+  {
+    name: 'WebAssembly Memory & Interop Visualizer',
+    path: '/pages/visualizers/wasm-memory-simulator/wasm-memory-simulator.html',
+    category: 'Systems & OS',
+    icon: 'fa-memory',
+    desc: 'Understand WebAssembly linear memory and how it exchanges data with JavaScript.',
+  },
 ];
 
 /* ─── Categories ─── */
