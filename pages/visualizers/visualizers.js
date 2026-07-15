@@ -440,6 +440,13 @@ const visualizers = [
     desc: 'Visualize Git internals: commits, branches, merges, and the DAG commit graph.',
   },
   {
+    name: 'External Merge Sort Visualizer',
+    path: '/pages/visualizers/external-merge-sort-visualizer/external-merge-sort-visualizer.html',
+    category: 'Systems & OS',
+    icon: 'fa-hard-drive',
+    desc: 'Sort data larger than memory — run generation, k-way merge, and disk I/O cost tracking.',
+  },
+  {
     name: 'ARIES Recovery Simulator',
     path: '/pages/visualizers/aries-simulator/aries-simulator.html',
     category: 'Systems & OS',
@@ -1068,6 +1075,11 @@ const visualizers = [
     category: 'Systems & OS',
     icon: 'fa-memory',
     desc: 'Understand WebAssembly linear memory and how it exchanges data with JavaScript.',
+    name: 'Snowflake Distributed ID Visualizer',
+    path: '/pages/visualizers/snowflake-id-visualizer/snowflake-id-visualizer.html',
+    category: 'Architecture',
+    icon: 'fa-bolt',
+    desc: 'Generate highly-scalable 64-bit unique identifiers using timestamps and machine IDs.',
   },
 ];
 
