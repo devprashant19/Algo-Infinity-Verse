@@ -14,8 +14,6 @@ export const {
   REFRESH_TOKEN_MAX_AGE_SECONDS,
 } = securityConfig;
 
-export { ACCESS_TOKEN_MAX_AGE_SECONDS, REFRESH_TOKEN_MAX_AGE_SECONDS };
-
 import { redisAvailable, redisClient } from '../jobs/queue.js';
 
 export const activeRefreshFamilies = new Map();

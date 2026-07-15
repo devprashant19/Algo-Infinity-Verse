@@ -111,6 +111,7 @@ let userCacheDirty = true;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
+const PAGE_404 = path.join(ROOT, '404.html');
 const IS_VERCEL = process.env.VERCEL === '1';
 const DATA_DIR = IS_VERCEL ? path.join('/tmp', 'algo-infinity-verse') : path.join(ROOT, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
@@ -3524,6 +3525,16 @@ async function serveStatic(req, res, pathname) {
 
     headers['Content-Type'] = mimeTypes[ext] || 'application/octet-stream';
     res.writeHead(200, headers);
+    res.end(content);
+  } catch {
+    await serve404Page(req, res);
+  }
+}
+
+async function serve404Page(req, res) {
+  try {
+    const content = await fs.readFile(PAGE_404, 'utf8');
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(content);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
