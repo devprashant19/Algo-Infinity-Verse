@@ -9,6 +9,11 @@ const visualizers = [
     category: 'Security & Crypto',
     icon: 'fa-lock',
     desc: 'Interactive sandbox for the OAuth 2.0 Authorization Code Flow with PKCE.',
+    name: 'CQRS & Event Sourcing',
+    path: '/pages/visualizers/cqrs-visualizer/cqrs-visualizer.html',
+    category: 'Distributed Systems',
+    icon: 'fa-database',
+    desc: 'Interactive simulator for Command Query Responsibility Segregation and Event Sourcing.',
   },
   // ── Sorting & Searching ──
   {
