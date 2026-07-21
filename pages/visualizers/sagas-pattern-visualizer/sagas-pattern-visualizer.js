@@ -85,10 +85,11 @@ function createPacket(text, isCompensating, startRect, endRect, onComplete) {
   packet.textContent = text;
   els.packetContainer.appendChild(packet);
 
-  const startX = startRect.left + startRect.width / 2;
-  const startY = startRect.top - 20; // slightly above
-  const endX = endRect.left + endRect.width / 2;
-  const endY = endRect.top - 20;
+  const containerRect = els.packetContainer.getBoundingClientRect();
+  const startX = startRect.left - containerRect.left + startRect.width / 2;
+  const startY = startRect.top - containerRect.top - 20; // slightly above
+  const endX = endRect.left - containerRect.left + endRect.width / 2;
+  const endY = endRect.top - containerRect.top - 20;
 
   // Animate up to the bus, across the bus, and down to the destination
   // Simplified: just direct line animation for now to save DOM complexity
