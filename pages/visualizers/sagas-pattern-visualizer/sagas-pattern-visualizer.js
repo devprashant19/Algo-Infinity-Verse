@@ -55,11 +55,19 @@ function resetUI() {
   });
 }
 
+const CARD_STATE_CLASS = {
+  PROCESSING: 'active',
+  COMPLETED: 'success',
+  FAILED: 'error',
+  COMPENSATING: 'compensating',
+  COMPENSATED: 'compensating',
+};
+
 function setServiceStatus(serviceId, statusClass, text) {
   const s = els.services[serviceId];
   s.status.className = `status-indicator ${statusClass}`;
   s.status.textContent = text;
-  s.card.className = `service-card ${statusClass.toLowerCase()}`;
+  s.card.className = `service-card ${CARD_STATE_CLASS[statusClass] || ''}`;
 }
 
 function addLog(type, msg) {
