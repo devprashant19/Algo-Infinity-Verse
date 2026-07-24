@@ -83,7 +83,7 @@ const quizzes = [
     icon: 'fa-language',
     desc: 'Prefix trees for autocomplete, spell check, pattern matching, and word search.',
     difficulty: 'medium',
-    questions: 10,
+    questions: 12,
   },
 
   // ── Core Algorithms ──
@@ -121,7 +121,7 @@ const quizzes = [
     icon: 'fa-arrows-left-right',
     desc: 'Linear scanning with two pointers for pair sums, partitioning, and palindrome checking.',
     difficulty: 'easy',
-    questions: 12,
+    questions: 14,
   },
   {
     name: 'Sliding Window',
@@ -130,7 +130,7 @@ const quizzes = [
     icon: 'fa-window-maximize',
     desc: 'Efficient subarray and substring processing with dynamically sized windows.',
     difficulty: 'medium',
-    questions: 12,
+    questions: 14,
   },
   {
     name: 'Greedy',
@@ -139,7 +139,7 @@ const quizzes = [
     icon: 'fa-bolt',
     desc: 'Locally optimal choices for interval scheduling, coin change, and Huffman coding.',
     difficulty: 'medium',
-    questions: 14,
+    questions: 16,
   },
 
   // ── Advanced ──
@@ -172,12 +172,12 @@ const quizzes = [
   },
   {
     name: 'Number Theory',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=numbertheory',
     category: 'Advanced',
-    icon: 'fa-sigma',
+    icon: 'fa-square-root-variable',
     desc: 'GCD, modular arithmetic, prime sieves, combinatorics, and Euler\'s theorem.',
     difficulty: 'medium',
-    questions: 14,
+    questions: 16,
   },
   {
     name: 'Bit Manipulation',
@@ -186,13 +186,13 @@ const quizzes = [
     icon: 'fa-microchip',
     desc: 'Bitwise operators, masks, XOR tricks, subset generation, and space-efficient techniques.',
     difficulty: 'medium',
-    questions: 12,
+    questions: 14,
   },
 
   // ── Special ──
   {
     name: 'DSA Quick Fire',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=dsaquickfire',
     category: 'Special',
     icon: 'fa-stopwatch',
     desc: 'Rapid-fire mixed questions across all DSA topics — test your speed and accuracy.',
@@ -201,7 +201,7 @@ const quizzes = [
   },
   {
     name: 'CP Patterns Quiz',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=cppatterns',
     category: 'Special',
     icon: 'fa-trophy',
     desc: 'Competitive programming patterns: sieve, combinatorics, two-pointer, and more.',
@@ -210,7 +210,7 @@ const quizzes = [
   },
   {
     name: 'Algorithm Identification',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=algorithmid',
     category: 'Special',
     icon: 'fa-eye',
     desc: 'Identify the correct algorithm or data structure from problem descriptions and pseudocode.',
@@ -219,7 +219,7 @@ const quizzes = [
   },
   {
     name: 'Time Complexity',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=timecomplexity',
     category: 'Special',
     icon: 'fa-chart-line',
     desc: 'Master Big O analysis — identify time and space complexity of algorithms and code snippets.',
@@ -228,21 +228,12 @@ const quizzes = [
   },
   {
     name: 'Mixed Bag Challenge',
-    path: '/pages/tools/quiz-system/quiz-system.html',
+    path: '/pages/topic-quiz/topic-quiz.html?topic=mixedbag',
     category: 'Special',
     icon: 'fa-shuffle',
     desc: 'A random assortment of questions from every category — the ultimate test of your DSA knowledge.',
     difficulty: 'hard',
     questions: 30,
-  },
-  {
-    name: 'Interview Prep',
-    path: '/pages/tools/quiz-system/quiz-system.html',
-    category: 'Special',
-    icon: 'fa-briefcase',
-    desc: 'Curated questions commonly asked in top tech company interviews — FAANG and beyond.',
-    difficulty: 'hard',
-    questions: 25,
   },
 ];
 

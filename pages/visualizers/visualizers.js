@@ -44,6 +44,20 @@ const visualizers = [
     category: 'Networking',
     icon: 'fa-network-wired',
     desc: 'Simulate how CUBIC (loss-based) and BBR (bandwidth-based) handle network congestion and packet loss.',
+    },
+    {
+    name: 'Transactional Outbox Pattern',
+    path: '/pages/visualizers/outbox-pattern/outbox-pattern.html',
+    category: 'Distributed Systems',
+    icon: 'fa-database',
+    desc: 'Visualize the Transactional Outbox Pattern to solve the dual-write problem in microservices.',
+    },
+    {
+    name: 'TLS 1.3 Handshake Simulator',
+    path: '/pages/visualizers/tls13-simulator/tls13-simulator.html',
+    category: 'Security & Crypto',
+    icon: 'fa-lock',
+    desc: 'Interactive visualizer for the TLS 1.3 cryptographic handshake protocol (1-RTT and 0-RTT).',
   },
   // ── Sorting & Searching ──
   {
@@ -1059,6 +1073,20 @@ const visualizers = [
     category: 'Algorithms',
     icon: 'fa-chart-line',
     desc: 'GPS and robotics state estimation — watch predict/update steps, Kalman gain, Gaussian belief narrowing, and sensor noise vs estimation accuracy live.',
+  },
+  {
+    name: "Mo's Algorithm Visualizer",
+    path: '/pages/visualizers/mos-algorithm-visualizer/mos-algorithm-visualizer.html',
+    category: 'Graph Algorithms',
+    icon: 'fa-arrows-left-right',
+    desc: 'Answer thousands of offline range queries via sqrt-decomposition block sort and a two-pointer sweep.',
+  },
+  {
+    name: 'DSU on Tree Visualizer',
+    path: '/pages/visualizers/dsu-on-tree-visualizer/dsu-on-tree-visualizer.html',
+    category: 'Data Structures',
+    icon: 'fa-code-merge',
+    desc: 'Small-to-large merging — keep the heavy child, merge only light subtrees, O(n log n) subtree queries.',
   },
 
   // ── Special & Creative ──
