@@ -4,6 +4,13 @@
 
 const visualizers = [
   {
+    name: 'Chandy-Lamport Distributed Snapshot',
+    path: '/pages/visualizers/chandy-lamport/chandy-lamport.html',
+    category: 'Distributed Systems',
+    icon: 'fa-camera',
+    desc: 'Capture a consistent global state in a distributed system where nodes only have local clocks.',
+  },
+  {
     name: 'Distributed Tracing Simulator',
     path: '/pages/visualizers/distributed-tracing/distributed-tracing.html',
     category: 'Distributed Systems',
@@ -145,12 +152,12 @@ const visualizers = [
     desc: 'Compare leftmost, rightmost, and insert-position binary search side-by-side with lo/hi/mid and mid±1 rules.',
   },
   {
-  name: "Diffie Hellman Key Exchange Visualizer",
-  path: "/pages/visualizers/diffie-hellman-key-exchange/diffie-hellman-visualizer.html",
-  category: "Security & Crypto",
-  icon: "fa-key",
-  desc: "Interactive visualization of the Diffie Hellman key exchange protocol."
-},
+    name: 'Diffie Hellman Key Exchange Visualizer',
+    path: '/pages/visualizers/diffie-hellman-key-exchange/diffie-hellman-visualizer.html',
+    category: 'Security & Crypto',
+    icon: 'fa-key',
+    desc: 'Interactive visualization of the Diffie Hellman key exchange protocol.',
+  },
   {
     name: 'Fast/Slow Pointer Simulator',
     path: '/pages/visualizers/fast-slow-pointer-simulator/fast-slow-pointer-simulator.html',
@@ -680,6 +687,8 @@ const visualizers = [
     category: 'Distributed Systems',
     icon: 'fa-satellite-dish',
     desc: 'Detect dead nodes efficiently without a central coordinator.',
+  },
+  {
     name: 'Rendezvous Hashing (HRW)',
     path: '/pages/visualizers/rendezvous-hashing-visualizer/rendezvous-hashing-visualizer.html',
     category: 'Distributed Systems',
