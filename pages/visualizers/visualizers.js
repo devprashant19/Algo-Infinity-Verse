@@ -4,6 +4,13 @@
 
 const visualizers = [
   {
+    name: 'Quotient Filter Data Structure',
+    path: '/pages/visualizers/quotient-filter/quotient-filter.html',
+    category: 'Data Structures',
+    icon: 'fa-filter',
+    desc: 'Space-efficient probabilistic alternative to Bloom Filters.',
+  },
+  {
     name: 'Distributed Tracing Simulator',
     path: '/pages/visualizers/distributed-tracing/distributed-tracing.html',
     category: 'Distributed Systems',
@@ -145,12 +152,12 @@ const visualizers = [
     desc: 'Compare leftmost, rightmost, and insert-position binary search side-by-side with lo/hi/mid and mid±1 rules.',
   },
   {
-  name: "Diffie Hellman Key Exchange Visualizer",
-  path: "/pages/visualizers/diffie-hellman-key-exchange/diffie-hellman-visualizer.html",
-  category: "Security & Crypto",
-  icon: "fa-key",
-  desc: "Interactive visualization of the Diffie Hellman key exchange protocol."
-},
+    name: 'Diffie Hellman Key Exchange Visualizer',
+    path: '/pages/visualizers/diffie-hellman-key-exchange/diffie-hellman-visualizer.html',
+    category: 'Security & Crypto',
+    icon: 'fa-key',
+    desc: 'Interactive visualization of the Diffie Hellman key exchange protocol.',
+  },
   {
     name: 'Fast/Slow Pointer Simulator',
     path: '/pages/visualizers/fast-slow-pointer-simulator/fast-slow-pointer-simulator.html',
@@ -680,6 +687,8 @@ const visualizers = [
     category: 'Distributed Systems',
     icon: 'fa-satellite-dish',
     desc: 'Detect dead nodes efficiently without a central coordinator.',
+  },
+  {
     name: 'Rendezvous Hashing (HRW)',
     path: '/pages/visualizers/rendezvous-hashing-visualizer/rendezvous-hashing-visualizer.html',
     category: 'Distributed Systems',
