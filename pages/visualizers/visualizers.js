@@ -9,6 +9,11 @@ const visualizers = [
     category: 'Distributed Systems',
     icon: 'fa-camera',
     desc: 'Capture a consistent global state in a distributed system where nodes only have local clocks.',
+    name: 'Hopfield Network Associative Memory',
+    path: '/pages/visualizers/hopfield-network/hopfield-network.html',
+    category: 'AI & ML',
+    icon: 'fa-brain',
+    desc: 'Visualize a recurrent neural network acting as a content-addressable memory system.',
   },
   {
     name: 'Distributed Tracing Simulator',
@@ -295,6 +300,13 @@ const visualizers = [
   },
 
   // ── Graph Algorithms ──
+  {
+    name: "Dinic's Algorithm Visualizer",
+    path: '/pages/visualizers/dinics-algorithm-visualizer/dinics-algorithm-visualizer.html',
+    category: 'Graph Algorithms',
+    icon: 'fa-water',
+    desc: 'Visualize Level Graphs, Blocking Flows, and Pointer Advancement in O(V²E) time.',
+  },
   {
     name: 'Bitmask DP: TSP',
     path: '/pages/visualizers/bitmask-dp-visualizer/bitmask-dp-visualizer.html',
@@ -947,6 +959,13 @@ const visualizers = [
 
   // ── AI & Machine Learning ──
   {
+    name: 'Simulated Annealing Schedules',
+    path: '/pages/visualizers/simulated-annealing-visualizer/simulated-annealing-visualizer.html',
+    category: 'AI & ML',
+    icon: 'fa-temperature-empty',
+    desc: 'Deep-dive into cooling schedules for SA: Linear, Exponential, Logarithmic, and Adaptive optimization races.',
+  },
+  {
     name: 'CNN Layer & Feature Map Explorer',
     path: '/pages/visualizers/cnn-visualizer/cnn-visualizer.html',
     category: 'AI & ML',
@@ -1509,6 +1528,13 @@ const visualizers = [
     category: 'Algorithms',
     icon: 'fa-network-wired',
     desc: 'Interactive SWIM Protocol Simulator - Algo Infinity Verse visualization.',
+  },
+  {
+    name: 'BWT + MTF + RLE Pipeline',
+    path: '/pages/visualizers/bwt-mtf-rle-visualizer/bwt-mtf-rle-visualizer.html',
+    category: 'Algorithms',
+    icon: 'fa-compress-arrows-alt',
+    desc: 'Visualize the full bzip2 compression pipeline: Burrows-Wheeler Transform, Move-to-Front, and RLE.',
   },
   {
     name: 't-Digest Percentile Estimator',
